@@ -1,5 +1,5 @@
 import LinesEllipsis from "react-lines-ellipsis";
-import Layout from "../Shared/Layout";
+
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -24,9 +24,10 @@ import {
 } from "react-share";
 import "react-toastify/dist/ReactToastify.css";
 import { Link, NavLink } from "react-router-dom";
-import { FaArrowCircleRight, FaHeart, FaShoppingCart } from "react-icons/fa";
+import { FaArrowCircleRight, FaArrowRight, FaHeart,  FaShoppingCart } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
+import Layout from "../shared/Layout";
 
 const Home = () => {
   const { HandleGetProducts, productData } = useContext(ProductContext);
@@ -199,7 +200,7 @@ const Home = () => {
 
                           <div className="flex justify-between items-center gap-4">
                             <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
-                              <FaHeart className="h-6 w-6" />
+                              <FaHeart  className="h-6 w-6" />
                             </span>
                             <span className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
                               <FaShoppingCart className="h-6 w-6" />
@@ -217,16 +218,18 @@ const Home = () => {
             {fewDisplay ? (
               <span
                 onClick={() => setFewDisplay(false)}
-                className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2"
+                className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2 flex justify-between items-center gap-2"
               >
                 See More
+                <p><FaArrowRight /></p>
               </span>
             ) : (
               <span
                 onClick={() => setFewDisplay(true)}
-                className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2"
+                className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2 flex justify-between items-center gap-2"
               >
                 See Less
+                <p><FaArrowRight /></p>
               </span>
             )}
           </div>

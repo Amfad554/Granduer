@@ -1,4 +1,4 @@
-import Layout from "../Shared/Layout";
+import Layout from "../shared/Layout";
 
 const Cart = () => {
     return ( 
@@ -9,5 +9,5 @@ const Cart = () => {
        </Layout>
      );
 }
- 
+
 export default Cart;

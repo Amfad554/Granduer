@@ -18,7 +18,7 @@
                 "navy",
                 "gray"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man1.jpg",
             "category": "men",
             "subcategory": "T-Shirts",
@@ -28,7 +28,8 @@
                 "casual",
                 "cotton",
                 "comfortable"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 2,
@@ -47,7 +48,7 @@
                 "blue",
                 "black"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man2.jpg",
             "category": "men",
             "subcategory": "Jeans",
@@ -57,7 +58,8 @@
                 "denim",
                 "slim-fit",
                 "trendy"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 3,
@@ -75,7 +77,7 @@
                 "gray",
                 "black"
             ],
-            "BestSeller": false,
+            "bestSelling": false,
             "image": "/images/man3.jpg",
             "category": "men",
             "subcategory": "Suits & Blazers",
@@ -85,7 +87,8 @@
                 "formal",
                 "office",
                 "blazer"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 4,
@@ -104,7 +107,7 @@
                 "blue",
                 "green"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man3.jpg",
             "category": "men",
             "subcategory": "Polo Shirts",
@@ -114,7 +117,8 @@
                 "casual",
                 "polo",
                 "summer"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 5,
@@ -130,7 +134,7 @@
             "colors": [
                 "black"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man4.jpg",
             "category": "men",
             "subcategory": "Jackets",
@@ -140,7 +144,8 @@
                 "leather",
                 "stylish",
                 "winter"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 6,
@@ -159,7 +164,7 @@
                 "black",
                 "navy"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man5.jpg",
             "category": "men",
             "subcategory": "Sweatshirts",
@@ -169,7 +174,8 @@
                 "hoodie",
                 "casual",
                 "warm"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 7,
@@ -188,7 +194,7 @@
                 "navy",
                 "olive"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man6.jpg",
             "category": "men",
             "subcategory": "Pants",
@@ -198,7 +204,8 @@
                 "chino",
                 "casual",
                 "semi-formal"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 8,
@@ -217,7 +224,7 @@
                 "yellow",
                 "blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman1.jpg",
             "category": "women",
             "subcategory": "Dresses",
@@ -227,7 +234,8 @@
                 "summer",
                 "floral",
                 "casual"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 9,
@@ -246,7 +254,7 @@
                 "light blue",
                 "dark blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman2.jpg",
             "category": "women",
             "subcategory": "Jeans",
@@ -256,7 +264,8 @@
                 "high-waist",
                 "denim",
                 "trendy"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 10,
@@ -274,7 +283,7 @@
                 "white",
                 "brown"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman3.jpg",
             "category": "women",
             "subcategory": "Sweaters",
@@ -284,7 +293,8 @@
                 "warm",
                 "winter",
                 "comfortable"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 11,
@@ -302,7 +312,7 @@
                 "white",
                 "beige"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman4.jpg",
             "category": "women",
             "subcategory": "Skirts",
@@ -312,7 +322,8 @@
                 "skirt",
                 "fashion",
                 "casual"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 12,
@@ -330,7 +341,7 @@
                 "black",
                 "gray"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman5.jpg",
             "category": "women",
             "subcategory": "Coats",
@@ -340,7 +351,8 @@
                 "coat",
                 "winter",
                 "elegant"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 13,
@@ -356,7 +368,7 @@
             "colors": [
                 "blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman6.jpg",
             "category": "women",
             "subcategory": "Jackets",
@@ -366,7 +378,8 @@
                 "denim",
                 "casual",
                 "trendy"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 14,
@@ -385,7 +398,7 @@
                 "blue",
                 "yellow"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child1.jpg",
             "category": "children",
             "subcategory": "T-Shirts",
@@ -395,7 +408,8 @@
                 "kids",
                 "cartoon",
                 "playwear"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 15,
@@ -413,7 +427,7 @@
                 "blue",
                 "light blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child2.jpg",
             "category": "children",
             "subcategory": "Overalls",
@@ -423,7 +437,8 @@
                 "denim",
                 "playwear",
                 "comfortable"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 16,
@@ -441,7 +456,7 @@
                 "navy",
                 "green"
             ],
-            "BestSeller": false,
+            "bestSelling": false,
             "image": "/images/child3.jpg",
             "category": "children",
             "subcategory": "Jackets",
@@ -451,12 +466,13 @@
                 "winter",
                 "warm",
                 "kids"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 17,
             "name": "Printed Hoodie",
-            "description": "Soft printed hoodie for kids’ everyday wear.",
+            "description": "Soft printed hoodie for kids\u2019 everyday wear.",
             "price": 27.99,
             "currency": "USD",
             "sizes": [
@@ -470,7 +486,7 @@
                 "blue",
                 "yellow"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child4.jpg",
             "category": "children",
             "subcategory": "Sweatshirts",
@@ -480,7 +496,8 @@
                 "hoodie",
                 "kids",
                 "casual"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 18,
@@ -499,7 +516,7 @@
                 "olive",
                 "gray"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child5.jpg",
             "category": "children",
             "subcategory": "Shorts",
@@ -509,7 +526,8 @@
                 "shorts",
                 "casual",
                 "playwear"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 19,
@@ -528,7 +546,7 @@
                 "purple",
                 "white"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child6.jpg",
             "category": "children",
             "subcategory": "Dresses",
@@ -538,7 +556,8 @@
                 "party",
                 "girls",
                 "dressy"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 20,
@@ -557,7 +576,7 @@
                 "blue",
                 "black"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child7.jpg",
             "category": "children",
             "subcategory": "Shoes",
@@ -567,11 +586,12 @@
                 "shoes",
                 "casual",
                 "kids"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 21,
-            "name": "Men’s Sports Shorts",
+            "name": "Men\u2019s Sports Shorts",
             "description": "Lightweight breathable shorts ideal for workouts and casual wear.",
             "price": 28.99,
             "currency": "USD",
@@ -586,7 +606,7 @@
                 "gray",
                 "blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man7.jpg",
             "category": "men",
             "subcategory": "Shorts",
@@ -596,11 +616,12 @@
                 "sports",
                 "casual",
                 "gym"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 22,
-            "name": "Men’s Checked Shirt",
+            "name": "Men\u2019s Checked Shirt",
             "description": "Casual checked shirt with button closure and long sleeves.",
             "price": 39.99,
             "currency": "USD",
@@ -614,7 +635,7 @@
                 "blue",
                 "green"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man20.jpg",
             "category": "men",
             "subcategory": "Shirts",
@@ -624,11 +645,12 @@
                 "casual",
                 "checked",
                 "stylish"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 23,
-            "name": "Men’s Sweatpants",
+            "name": "Men\u2019s Sweatpants",
             "description": "Comfortable sweatpants with elastic waistband and side pockets.",
             "price": 35.99,
             "currency": "USD",
@@ -643,7 +665,7 @@
                 "black",
                 "navy"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man9.jpg",
             "category": "men",
             "subcategory": "Pants",
@@ -653,11 +675,12 @@
                 "casual",
                 "lounge",
                 "sports"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 24,
-            "name": "Men’s Winter Coat",
+            "name": "Men\u2019s Winter Coat",
             "description": "Heavy-duty insulated coat with multiple pockets for warmth.",
             "price": 130.0,
             "currency": "USD",
@@ -670,7 +693,7 @@
                 "black",
                 "brown"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man10.jpg",
             "category": "men",
             "subcategory": "Coats",
@@ -680,11 +703,12 @@
                 "winter",
                 "coat",
                 "warm"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 25,
-            "name": "Men’s Running Shoes",
+            "name": "Men\u2019s Running Shoes",
             "description": "Lightweight running shoes with breathable mesh upper.",
             "price": 75.99,
             "currency": "USD",
@@ -700,7 +724,7 @@
                 "black",
                 "gray"
             ],
-            "BestSeller": false,
+            "bestSelling": true,
             "image": "/images/man11.jpg",
             "category": "men",
             "subcategory": "Shoes",
@@ -710,11 +734,12 @@
                 "running",
                 "sports",
                 "shoes"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 26,
-            "name": "Women’s Blouse",
+            "name": "Women\u2019s Blouse",
             "description": "Elegant chiffon blouse perfect for office or casual wear.",
             "price": 42.99,
             "currency": "USD",
@@ -728,7 +753,7 @@
                 "pink",
                 "sky blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman7.jpg",
             "category": "women",
             "subcategory": "Tops",
@@ -738,11 +763,12 @@
                 "blouse",
                 "elegant",
                 "office"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 27,
-            "name": "Women’s Yoga Pants",
+            "name": "Women\u2019s Yoga Pants",
             "description": "Stretchable yoga pants for maximum comfort during workouts.",
             "price": 36.99,
             "currency": "USD",
@@ -757,7 +783,7 @@
                 "gray",
                 "navy"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman8.jpg",
             "category": "women",
             "subcategory": "Activewear",
@@ -767,11 +793,12 @@
                 "yoga",
                 "activewear",
                 "fitness"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 28,
-            "name": "Women’s Cardigan",
+            "name": "Women\u2019s Cardigan",
             "description": "Soft open-front cardigan made from cozy knit fabric.",
             "price": 55.99,
             "currency": "USD",
@@ -785,7 +812,7 @@
                 "gray",
                 "cream"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman9.jpg",
             "category": "women",
             "subcategory": "Sweaters",
@@ -795,11 +822,12 @@
                 "cardigan",
                 "warm",
                 "cozy"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 29,
-            "name": "Women’s Maxi Dress",
+            "name": "Women\u2019s Maxi Dress",
             "description": "Flowy maxi dress with floral prints, ideal for evening wear.",
             "price": 69.99,
             "currency": "USD",
@@ -813,7 +841,7 @@
                 "blue",
                 "purple"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman10.jpg",
             "category": "women",
             "subcategory": "Dresses",
@@ -823,11 +851,12 @@
                 "maxi",
                 "floral",
                 "evening"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 30,
-            "name": "Women’s Leather Handbag",
+            "name": "Women\u2019s Leather Handbag",
             "description": "Premium leather handbag with gold accents and ample space.",
             "price": 89.99,
             "currency": "USD",
@@ -838,7 +867,7 @@
                 "black",
                 "brown"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman11.jpg",
             "category": "women",
             "subcategory": "Accessories",
@@ -848,7 +877,8 @@
                 "handbag",
                 "leather",
                 "accessory"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 31,
@@ -865,7 +895,7 @@
             "colors": [
                 "blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child8.jpg",
             "category": "children",
             "subcategory": "Skirts",
@@ -875,7 +905,8 @@
                 "girls",
                 "denim",
                 "cute"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 32,
@@ -894,7 +925,7 @@
                 "blue",
                 "black"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child9.jpg",
             "category": "children",
             "subcategory": "Sweatshirts",
@@ -904,7 +935,8 @@
                 "boys",
                 "hoodie",
                 "fleece"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 33,
@@ -923,7 +955,7 @@
                 "red",
                 "blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child10.jpg",
             "category": "children",
             "subcategory": "Jackets",
@@ -933,12 +965,13 @@
                 "raincoat",
                 "kids",
                 "waterproof"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 34,
             "name": "Kids Pajama Set",
-            "description": "Soft cotton pajama set for a cozy night’s sleep.",
+            "description": "Soft cotton pajama set for a cozy night\u2019s sleep.",
             "price": 27.99,
             "currency": "USD",
             "sizes": [
@@ -952,7 +985,7 @@
                 "blue",
                 "white"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child11.jpg",
             "category": "children",
             "subcategory": "Sleepwear",
@@ -962,11 +995,12 @@
                 "sleepwear",
                 "kids",
                 "cotton"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 35,
-            "name": "Men’s Linen Shirt",
+            "name": "Men\u2019s Linen Shirt",
             "description": "Breathable linen shirt ideal for warm weather.",
             "price": 52.99,
             "currency": "USD",
@@ -980,7 +1014,7 @@
                 "beige",
                 "sky blue"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man12.jpg",
             "category": "men",
             "subcategory": "Shirts",
@@ -990,11 +1024,12 @@
                 "linen",
                 "summer",
                 "casual"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 36,
-            "name": "Men’s Cargo Pants",
+            "name": "Men\u2019s Cargo Pants",
             "description": "Utility pants with multiple pockets and a relaxed fit.",
             "price": 59.99,
             "currency": "USD",
@@ -1009,7 +1044,7 @@
                 "black",
                 "khaki"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/man13.jpg",
             "category": "men",
             "subcategory": "Pants",
@@ -1019,11 +1054,12 @@
                 "cargo",
                 "utility",
                 "casual"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 37,
-            "name": "Women’s Crop Top",
+            "name": "Women\u2019s Crop Top",
             "description": "Trendy ribbed crop top with short sleeves.",
             "price": 25.99,
             "currency": "USD",
@@ -1037,7 +1073,7 @@
                 "white",
                 "brown"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman12.jpg",
             "category": "women",
             "subcategory": "Tops",
@@ -1047,11 +1083,12 @@
                 "crop",
                 "top",
                 "casual"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 38,
-            "name": "Women’s Joggers",
+            "name": "Women\u2019s Joggers",
             "description": "Soft cotton joggers with an elastic waistband.",
             "price": 39.99,
             "currency": "USD",
@@ -1066,7 +1103,7 @@
                 "black",
                 "beige"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/woman13.jpg",
             "category": "women",
             "subcategory": "Pants",
@@ -1076,12 +1113,13 @@
                 "joggers",
                 "comfy",
                 "athleisure"
-            ]
+            ],
+            "newArrival": false
         },
         {
             "id": 39,
             "name": "Girls Ballet Flats",
-            "description": "Comfortable slip-on flats for girls’ daily wear.",
+            "description": "Comfortable slip-on flats for girls\u2019 daily wear.",
             "price": 29.99,
             "currency": "USD",
             "sizes": [
@@ -1095,7 +1133,7 @@
                 "white",
                 "black"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child12.jpg",
             "category": "children",
             "subcategory": "Shoes",
@@ -1105,7 +1143,8 @@
                 "flats",
                 "girls",
                 "comfortable"
-            ]
+            ],
+            "newArrival": true
         },
         {
             "id": 40,
@@ -1121,7 +1160,7 @@
                 "red",
                 "yellow"
             ],
-            "BestSeller": true,
+            "bestSelling": true,
             "image": "/images/child13.jpg",
             "category": "children",
             "subcategory": "Accessories",
@@ -1131,7 +1170,8 @@
                 "cap",
                 "kids",
                 "summer"
-            ]
+            ],
+            "newArrival": false
         }
     ]
 }

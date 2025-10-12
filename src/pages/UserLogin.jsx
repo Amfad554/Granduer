@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { FiMail, FiLock, FiUser, FiPhone } from "react-icons/fi";
-import Layout from "../Shared/Layout";
-import Input from "../Shared/Input";
+
+import Layout from "../shared/Layout";
+import Input from "../shared/Input";
 
 const UserLoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
