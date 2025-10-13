@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import Layout from "../shared/Layout";
 import { FaStar } from "react-icons/fa";
 import { ProductContext } from "../Context/ProductContext";
+import Layout from "../Shared/Layout";
 
 const Children = () => {
-  const { productData, HandleGetProducts } = useContext(ProductContext);
+  const { productData, HandleGetProducts, HandleAddTCart } = useContext(ProductContext);
   const [childrenProducts, setChildrenProducts] = useState([]);
 
   // Fetch products
@@ -83,12 +83,8 @@ const Children = () => {
                     ${item.price}
                   </p>
                   <button
-                    className="bg-black text-white text-sm px-3 py-2 rounded-full hover:bg-blue-600 transition"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert(`${item.name} added to cart 🛒`);
-                    }}
-                  >
+                  onClick={(()=> HandleAddTCart(item, 1, item?.defaultSize, item?.defaultColor))}
+                    className="bg-black text-white text-sm px-3 py-2 rounded-full hover:bg-blue-600 transition">
                     Add to Cart
                   </button>
                 </div>

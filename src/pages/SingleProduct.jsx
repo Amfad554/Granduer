@@ -1,37 +1,36 @@
 import { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import { ProductContext } from "../Context/ProductContext";
+import { useParams } from "react-router-dom";
 import Layout from "../Shared/Layout";
-import { FaStar } from "react-icons/fa";
 
 const SingleProduct = () => {
   const { id } = useParams();
-  const { productData, HandleGetProducts } = useContext(ProductContext);
+  const { productData, HandleGetProducts, HandleAddTCart } =
+    useContext(ProductContext);
+  
+
+
   const [product, setProduct] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
 
-  const colorOptions = ["#000000", "#ff0000", "#0000ff", "#008000", "#ff69b4"];
-  const sizeOptions = ["S", "M", "L", "XL", "XXL"];
-
   useEffect(() => {
-    HandleGetProducts();
-  }, [HandleGetProducts]);
+    if (!productData?.length > 0) {
+      HandleGetProducts();
+    }
+  }, [HandleGetProducts, productData]);
 
   useEffect(() => {
     if (productData?.length > 0) {
       const found = productData.find(
-        (item) => parseInt(item?.id) === parseInt(id)
+        (item) => parseInt(item.id) === parseInt(id)
       );
       setProduct(found);
+      setSelectedColor(found?.defaultColor || "");
+      setSelectedSize(found?.defaultSize || "");
     }
   }, [productData, id]);
-
-  const handleQuantityChange = (value) => {
-    if (value < 1) return;
-    setQuantity(value);
-  };
 
   if (!product) {
     return (
@@ -41,129 +40,133 @@ const SingleProduct = () => {
 
   return (
     <Layout>
-      <div className="md:px-10 lg:px-24 mb-3 mt-3 py-5">
-        <div className="px-6 md:px-10 lg:px-20 flex flex-col md:flex-row justify-center items-center shadow-2xl gap-6 bg-white rounded-xl p-6">
-          {/* Product Image */}
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-96 h-[28rem] object-cover rounded-lg"
-          />
+      <div className="p-20">
+        <div className="p-6 max-w-3xl mx-auto bg-white rounded-2xl shadow-md ">
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Product Image */}
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full md:w-1/2 h-80 object-cover rounded-xl"
+            />
 
-          {/* Product Details */}
-          <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold text-primary mb-2">
-              {product.name}
-            </h1>
+            {/* Product Info */}
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+              <p className="text-gray-600 mb-3">{product.description}</p>
 
-            {/* ⭐ Rating */}
-            <div className="flex justify-center md:justify-start gap-1 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <FaStar key={i} className="text-yellow-400 text-xl" />
-              ))}
-            </div>
-
-            {/* 📝 Description */}
-            <p className="text-gray-700 mb-4">{product.description}</p>
-
-            {/* 🎨 Color Options */}
-            <div className="mb-6">
-              <p className="font-semibold mb-2">Available Colors:</p>
-              <div className="flex justify-center md:justify-start gap-3">
-                {colorOptions.map((color, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-8 h-8 rounded-full border-2 transition ${
-                      selectedColor === color
-                        ? "border-primary scale-110"
-                        : "border-gray-300"
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-              {selectedColor && (
-                <p className="text-sm text-gray-600 mt-2">
-                  Selected color:{" "}
-                  <span
-                    className="inline-block w-4 h-4 rounded-full ml-1"
-                    style={{ backgroundColor: selectedColor }}
-                  ></span>
+              <div className="mb-4">
+                <p className="text-xl font-semibold text-green-700">
+                  ${product.price}{" "}
+                  {product.discount > 0 && (
+                    <span className="text-sm text-red-500 ml-2">
+                      ({product.discount}% off)
+                    </span>
+                  )}
                 </p>
-              )}
-            </div>
-
-            {/* 📏 Size Options */}
-            <div className="mb-6">
-              <p className="font-semibold mb-2">Select Size:</p>
-              <div className="flex justify-center md:justify-start gap-3 flex-wrap">
-                {sizeOptions.map((size, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedSize(size)}
-                    className={`px-4 py-2 rounded-md border-2 transition ${
-                      selectedSize === size
-                        ? "bg-primary text-white border-primary scale-105"
-                        : "border-gray-300 text-gray-700 hover:border-primary"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-              {selectedSize && (
-                <p className="text-sm text-gray-600 mt-2">
-                  Selected size:{" "}
-                  <span className="font-semibold">{selectedSize}</span>
+                <p className="text-sm text-gray-500 uppercase mt-1">
+                  Category: {product.category} → {product.subcategory}
                 </p>
-              )}
-            </div>
+              </div>
 
-            {/* 🧮 Quantity + Add to Cart */}
-            <div className="flex flex-col md:flex-row justify-center md:justify-start items-center gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-3">
+              {/* Sizes */}
+              {product?.sizes && product?.sizes.length > 0 && (
+                <div className="mb-4">
+                  <h2 className="font-semibold mb-1">Select Size:</h2>
+                  <div className="flex gap-2">
+                    {product.sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`border rounded-md px-3 py-1 text-sm cursor-pointer transition-all 
+                      ${
+                        selectedSize === size
+                          ? "bg-black text-white border-black"
+                          : "hover:bg-gray-100"
+                      }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Colors */}
+              {product.colors && product.colors.length > 0 && (
+                <div className="mb-4">
+                  <h2 className="font-semibold mb-1">Select Color:</h2>
+                  <div className="flex gap-3">
+                    {product.colors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-all
+                      ${
+                        selectedColor === color
+                          ? "border-black scale-110"
+                          : "border-gray-300 hover:scale-105"
+                      }`}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      ></button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quantity */}
+              <div className="mb-4 flex items-center gap-3">
+                <h2 className="font-semibold">Quantity:</h2>
+                <div className="flex items-center border rounded-md">
                   <button
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    className="px-4 py-2 bg-gray-200 text-lg rounded-md hover:bg-gray-300 transition"
+                    className="px-3 py-1 text-lg"
+                    onClick={() =>
+                      setQuantity((prev) => (prev > 1 ? prev - 1 : 1))
+                    }
                   >
                     -
                   </button>
+
                   <input
                     type="number"
-                    value={quantity}
-                    onChange={(e) =>
-                      handleQuantityChange(Number(e.target.value))
-                    }
-                    className="w-16 text-center border border-gray-300 rounded-md py-2"
                     min="1"
+                    value={quantity}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (!isNaN(value) && value > 0) setQuantity(value);
+                    }}
+                    className="w-16 text-center outline-none px-2 py-1"
                   />
+
                   <button
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    className="px-4 py-2 bg-gray-200 text-lg rounded-md hover:bg-gray-300 transition"
+                    className="px-3 py-1 text-lg"
+                    onClick={() => setQuantity((prev) => prev + 1)}
                   >
                     +
                   </button>
                 </div>
               </div>
 
-              {/* 🛒 Add to Cart beside amount */}
-              <button className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition">
+              {/* Add to Cart */}
+              <button
+                onClick={() =>  HandleAddTCart(product, quantity, selectedSize, selectedColor )}
+                className="mt-4 w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-all"
+              >
                 Add to Cart
               </button>
-            </div>
 
-            {/* 💵 Price */}
-            <p className="text-2xl font-semibold text-primary mb-6">
-              ${product.price}
-            </p>
-
-            {/* 🛍 Buy Now below */}
-            <div className="flex justify-center md:justify-start">
-              <button className="bg-primary text-white px-8 py-3 rounded-lg text-lg hover:bg-primary transition">
-                Buy Now
-              </button>
+              {/* Rating and Best Seller */}
+              <div className="flex items-center gap-4 mt-6">
+                <p className="text-yellow-500 font-semibold">
+                  ⭐ {product.rating} / 5
+                </p>
+                {product.bestSeller && (
+                  <span className="bg-orange-500 text-white text-sm px-2 py-1 rounded-md">
+                    {product?.bestSeller && <span>Best Seller</span>}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

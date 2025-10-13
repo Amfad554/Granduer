@@ -3,6 +3,7 @@ import { ProductContext } from "../Context/ProductContext";
 
 import { FaStar } from "react-icons/fa";
 import Layout from "../shared/Layout";
+import { Link } from "react-router-dom";
 
 const NewArrivals = () => {
   const { productData, HandleGetProducts } = useContext(ProductContext);
@@ -38,7 +39,8 @@ const NewArrivals = () => {
 
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {newArrivals.map((product) => (
-            <div
+            <Link
+             to={`/product/${product.id}`}
               key={product.id}
               className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all overflow-hidden"
             >
@@ -64,7 +66,7 @@ const NewArrivals = () => {
                   ${product.price.toFixed(2)}
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

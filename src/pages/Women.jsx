@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import Layout from "../shared/Layout";
 import { FaStar } from "react-icons/fa";
 import { ProductContext } from "../Context/ProductContext";
+import Layout from "../Shared/Layout";
 
 const Women = () => {
-  const { productData, HandleGetProducts } = useContext(ProductContext);
+  const { productData, HandleGetProducts, HandleAddTCart } = useContext(ProductContext);
   const [womenProducts, setWomenProducts] = useState([]);
 
   // Fetch products from context
@@ -35,7 +35,7 @@ const Women = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {womenProducts.map((item) => (
             <Link
-              to={`/product/${item.id}`} // ✅ fixed template literal
+              to={`/product/${item.id}`}
               key={item.id}
               className="bg-white rounded-2xl shadow hover:shadow-lg transition duration-300 overflow-hidden group block"
             >
@@ -83,12 +83,8 @@ const Women = () => {
                     ${item.price}
                   </p>
                   <button
-                    className="bg-black text-white text-sm px-3 py-2 rounded-full hover:bg-pink-600 transition"
-                    onClick={(e) => {
-                      e.preventDefault(); // prevent navigation
-                      alert(`${item.name} added to cart 🛒`);
-                    }}
-                  >
+                  onClick={(()=> HandleAddTCart(item, 1, item?.defaultSize, item?.defaultColor ))}
+                    className="bg-black text-white text-sm px-3 py-2 rounded-full hover:bg-pink-600 transition">
                     Add to Cart
                   </button>
                 </div>

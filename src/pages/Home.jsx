@@ -27,10 +27,10 @@ import { Link, NavLink } from "react-router-dom";
 import { FaArrowCircleRight, FaArrowRight, FaHeart,  FaShoppingCart } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
-import Layout from "../shared/Layout";
+import Layout from "../Shared/Layout";
 
 const Home = () => {
-  const { HandleGetProducts, productData } = useContext(ProductContext);
+  const { HandleGetProducts, productData, HandleAddTCart } = useContext(ProductContext);
   const [bestSeller, setBestSeller] = useState([]);
   const [few, setFew] = useState([]);
   const [fewDisplay, setFewDisplay] = useState(true);
@@ -47,7 +47,6 @@ const Home = () => {
 
       const found = productData.filter((item) => item.bestSeller === true);
 
-      // ✅ Fallback to all products if no best sellers found
       setBestSeller(found.length > 0 ? found : productData);
     }
   }, [productData]);
@@ -161,7 +160,7 @@ const Home = () => {
                             <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
                               <FaHeart className="h-6 w-6" />
                             </span>
-                            <span className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
+                            <span onClick={(()=> HandleAddTCart(few, 1, few?.defaultSize, few?.defaultColor))} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
                               <FaShoppingCart className="h-6 w-6" />
                             </span>
                           </div>
@@ -202,7 +201,7 @@ const Home = () => {
                             <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
                               <FaHeart  className="h-6 w-6" />
                             </span>
-                            <span className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
+                            <span onClick={()=> HandleAddTCart(best, 1, best?.defaultSize, best?.defaultColor)} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
                               <FaShoppingCart className="h-6 w-6" />
                             </span>
                           </div>
