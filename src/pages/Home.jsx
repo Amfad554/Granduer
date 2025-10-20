@@ -29,6 +29,8 @@ import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout";
 
+
+
 const Home = () => {
   const { HandleGetProducts, productData, HandleAddTCart } = useContext(ProductContext);
   const [bestSeller, setBestSeller] = useState([]);
@@ -53,6 +55,7 @@ const Home = () => {
 
   return (
     <Layout>
+
       <div className="bg-primary flex flex-col justify-center min-h-screen mb-12">
         <div className="flex justify-center">
           <NavLink className="relative rounded-3xl text-sm overflow-hidden p-4 mt-4">

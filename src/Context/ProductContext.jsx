@@ -1,11 +1,10 @@
 import { createContext, useEffect, useState } from "react";
 const ProductContext = createContext();
+import { ToastContainer, toast } from "react-toastify";
 
 const ProductProvider = ({ children }) => {
   const [productData, setProductData] = useState(null);
-
   const [isAuthentified, setisAuthentified] = useState(false);
-
   const [cartcout, setCartCount] = useState(0);
   const [cartItems, setCartItems] = useState(
     JSON.parse(localStorage.getItem("cartItems")) || []
@@ -35,11 +34,14 @@ const ProductProvider = ({ children }) => {
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
+
+        toast.info("Existing Item quantity added to cart successfully");
       } else {
         updatedCartItems = [
           ...storedCartItems,
           { ...prod, quantity, size, color },
         ];
+        toast.success("Item added to cart successfully");
       }
 
       localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
@@ -69,11 +71,78 @@ const ProductProvider = ({ children }) => {
     }
   };
 
+  const HandleUpdateCart = async (prod) => {
+    try {
+      if (!isAuthentified) {
+        const storedCartItems = JSON.parse(localStorage.getItem("cartItems"));
+
+        const existingProduct = storedCartItems.find(
+          (item) => parseInt(item?.id) === parseInt(prod?.id)
+        );
+
+        if (!existingProduct) {
+          toast.error("Product does not exist in cart!");
+          return;
+        }
+
+        const updatedCartItems = storedCartItems.map((item) =>
+          parseInt(item?.id) === parseInt(prod?.id)
+            ? {
+                ...item,
+                size: prod?.size ?? item?.size,
+                quantity: prod?.quantity ?? item?.quantity,
+                color: prod?.color ?? item?.color,
+              }
+            : item
+        );
+
+        localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+        setCartItems(updatedCartItems);
+        toast.success("Cart item updated successfully");
+      } else {
+        console.log("Authentified user");
+      }
+    } catch (error) {
+      console.log(error?.message);
+    }
+  };
+
+  const HandleDeleteCart = async (prodId) => {
+    try {
+      if (!isAuthentified) {
+        const storedCartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+
+        const existingProduct = storedCartItems?.find(
+          (item) => parseInt(item?.id) === parseInt(prodId)
+        );
+
+        if (!existingProduct) {
+          toast.error("Product not found in cart!");
+          return;
+        }
+
+        const updatedCartItems = storedCartItems.filter(
+          (item) => parseInt(item?.id) !== parseInt(prodId)
+        );
+
+        localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+        setCartItems(updatedCartItems);
+        toast.success("Item removed from cart successfully");
+      } else {
+        console.log("Authenticated user - handle API cart delete here");
+      }
+    } catch (error) {
+      console.log(error?.message);
+    }
+  };
+
   return (
     <ProductContext.Provider
       value={{
         HandleGetProducts,
         HandleAddTCart,
+        HandleUpdateCart,
+        HandleDeleteCart, 
         productData,
         cartItems,
         cartcout,
@@ -81,6 +150,7 @@ const ProductProvider = ({ children }) => {
       }}
     >
       {children}
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar pauseOnHover theme="colored" />
     </ProductContext.Provider>
   );
 };

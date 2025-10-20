@@ -3,5 +3,5 @@ const Dashboard = () => {
         <p>Welcome to your Dashboard </p>
     </div> );
 }
- 
+
 export default Dashboard;

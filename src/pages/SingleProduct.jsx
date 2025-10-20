@@ -3,17 +3,18 @@ import { ProductContext } from "../Context/ProductContext";
 import { useParams } from "react-router-dom";
 import Layout from "../Shared/Layout";
 
+
 const SingleProduct = () => {
   const { id } = useParams();
-  const { productData, HandleGetProducts, HandleAddTCart } =
+  const { productData, HandleGetProducts, HandleAddTCart, cartItems } =
     useContext(ProductContext);
-  
-
 
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [isInCart, setIsInCart] = useState(false);
+  const [currentCartQuantity, setCurrentCartQuantity] = useState(0);
 
   useEffect(() => {
     if (!productData?.length > 0) {
@@ -32,26 +33,62 @@ const SingleProduct = () => {
     }
   }, [productData, id]);
 
+  // Check if product is in cart and get current quantity
+  useEffect(() => {
+    if (product && cartItems) {
+      const cartItem = cartItems.find(
+        (item) =>
+          parseInt(item.id) === parseInt(product.id) &&
+          item.size === selectedSize &&
+          item.color === selectedColor
+      );
+
+      if (cartItem) {
+        setIsInCart(true);
+        setCurrentCartQuantity(cartItem.quantity || 0);
+      } else {
+        setIsInCart(false);
+        setCurrentCartQuantity(0);
+      }
+    }
+  }, [cartItems, product, selectedSize, selectedColor]);
+
+  const handleAddToCart = (e) => {
+    e.preventDefault(); 
+    HandleAddTCart(product, quantity, selectedSize, selectedColor);
+  };
+
+  
+
   if (!product) {
     return (
       <p className="text-center text-gray-500 mt-10">Loading product...</p>
     );
   }
 
-  return (
+  return ( 
     <Layout>
-      <div className="p-20">
-        <div className="p-6 max-w-3xl mx-auto bg-white rounded-2xl shadow-md ">
-          <div className="flex flex-col md:flex-row gap-6">
+      <div className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             {/* Product Image */}
-            <img
+            <div className="flex gap-4">
+              {/* <img
               src={product.image}
               alt={product.name}
               className="w-full md:w-1/2 h-80 object-cover rounded-xl"
-            />
+            /> */}
+              <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
 
             {/* Product Info */}
-            <div className="flex-1">
+            <div className="flex flex-col">
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
               <p className="text-gray-600 mb-3">{product.description}</p>
 
@@ -115,6 +152,16 @@ const SingleProduct = () => {
                 </div>
               )}
 
+              {/* Cart Status Alert */}
+              {isInCart && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm text-green-800 font-medium">
+                    ✓ This item is already in your cart (Quantity:{" "}
+                    {currentCartQuantity})
+                  </p>
+                </div>
+              )}
+
               {/* Quantity */}
               <div className="mb-4 flex items-center gap-3">
                 <h2 className="font-semibold">Quantity:</h2>
@@ -149,12 +196,41 @@ const SingleProduct = () => {
               </div>
 
               {/* Add to Cart */}
-              <button
-                onClick={() =>  HandleAddTCart(product, quantity, selectedSize, selectedColor )}
+
+               {!isInCart ? (
+                <button
+                  onClick={handleAddToCart}
+                  className="mt-4 w-full py-3 rounded-md transition-all font-medium bg-black hover:bg-gray-800 text-white"
+                >
+                  Add to Cart
+                </button>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-md font-medium bg-green-100 text-green-700 border-2 border-green-300 cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <span className="text-lg">✓</span>
+                    Added to Cart
+                  </button>                
+             
+                </div>
+              )}
+
+              {/* <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  HandleAddTCart(
+                    product,
+                    quantity,
+                    selectedSize,
+                    selectedColor
+                  );
+                }}
                 className="mt-4 w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-all"
               >
                 Add to Cart
-              </button>
+              </button> */}
 
               {/* Rating and Best Seller */}
               <div className="flex items-center gap-4 mt-6">
