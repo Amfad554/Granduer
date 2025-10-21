@@ -4,7 +4,7 @@ import { FiMail, FiLock, FiUser, FiPhone } from "react-icons/fi";
 
 
 import Layout from "../Shared/Layout/Layout";
-import Input from "../shared/Input";
+import Input from "../Shared/Layout/Input";
 
 
 
