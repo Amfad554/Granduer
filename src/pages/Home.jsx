@@ -27,7 +27,8 @@ import { Link, NavLink } from "react-router-dom";
 import { FaArrowCircleRight, FaArrowRight, FaHeart,  FaShoppingCart } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
-import Layout from "../Shared/Layout";
+import Layout from "../shared/Layout";
+
 
 
 

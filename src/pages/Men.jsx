@@ -2,7 +2,8 @@ import React, { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { ProductContext } from "../Context/ProductContext";
-import Layout from "../Shared/Layout";
+import Layout from "../shared/Layout";
+
 
 
 
@@ -26,8 +27,8 @@ const Men = () => {
   }, [productData]);
 
   return (
-   <Layout>
-     <div>
+  <Layout>
+    <div>
       <div className="w-full px-6 md:px-16 py-10 bg-gray-50">
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-8 text-center">
           Men’s Collection 

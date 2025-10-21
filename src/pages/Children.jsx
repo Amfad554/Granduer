@@ -2,7 +2,8 @@ import React, { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { ProductContext } from "../Context/ProductContext";
-import Layout from "../Shared/Layout";
+import Layout from "../shared/Layout";
+
 
 const Children = () => {
   const { productData, HandleGetProducts, HandleAddTCart } = useContext(ProductContext);
