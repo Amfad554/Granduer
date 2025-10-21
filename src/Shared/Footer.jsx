@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import Input from "./Input";
+
 import { FaFacebookF, FaInstagram, FaTwitter } from "react-icons/fa";
 
 const Footer = () => {

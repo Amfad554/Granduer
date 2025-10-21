@@ -3,8 +3,10 @@ import { FiMail, FiLock, FiUser, FiPhone } from "react-icons/fi";
 
 
 
-import Input from "../Shared/Input";
 import Layout from "../Shared/Layout/Layout";
+import Input from "../shared/Input";
+
+
 
 
 const UserLoginPage = () => {
