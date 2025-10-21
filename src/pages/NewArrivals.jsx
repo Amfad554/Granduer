@@ -6,6 +6,7 @@ import { FaStar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Layout from "../shared/Layout";
 
+
 const NewArrivals = () => {
   const { productData, HandleGetProducts } = useContext(ProductContext);
   const [newArrivals, setNewArrivals] = useState([]);
