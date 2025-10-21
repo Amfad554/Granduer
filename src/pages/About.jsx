@@ -1,4 +1,5 @@
-import Layout from "../shared/Layout";
+import Layout from "../Shared/Layout/Layout";
+
 
 
 

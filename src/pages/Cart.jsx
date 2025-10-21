@@ -4,7 +4,8 @@ import { ProductContext } from "../Context/ProductContext";
 import { RiDeleteBin3Fill, RiEditCircleFill } from "react-icons/ri";
 import { ImCancelCircle } from "react-icons/im";
 import Edit from "../Component/SingleProductComponent/Edit";
-import Layout from "../shared/Layout";
+import Layout from "../Shared/Layout/Layout";
+
 
 
 const Cart = () => {

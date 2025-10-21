@@ -4,7 +4,8 @@ import { ProductContext } from "../Context/ProductContext";
 import { FaStar } from "react-icons/fa";
 
 import { Link } from "react-router-dom";
-import Layout from "../shared/Layout";
+import Layout from "../Shared/Layout/Layout";
+
 
 
 const NewArrivals = () => {
