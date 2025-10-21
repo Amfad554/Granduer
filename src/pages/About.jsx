@@ -1,6 +1,7 @@
 import Layout from "../shared/Layout";
 
 
+
 const About = () => {
   return (
     <Layout>
