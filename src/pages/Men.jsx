@@ -7,6 +7,7 @@ import Layout from "../shared/Layout";
 
 
 
+
 const Men = () => {
   const { productData, HandleGetProducts, HandleAddTCart } = useContext(ProductContext);
   const [menProducts, setMenProducts] = useState([]);

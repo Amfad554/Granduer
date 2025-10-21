@@ -5,6 +5,7 @@ import Layout from "../shared/Layout";
 
 
 
+
 const SingleProduct = () => {
   const { id } = useParams();
   const { productData, HandleGetProducts, HandleAddTCart, cartItems } =

@@ -1,9 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
-import Layout from "../Shared/Layout";
+
 import { RiDeleteBin3Fill, RiEditCircleFill } from "react-icons/ri";
 import { ImCancelCircle } from "react-icons/im";
 import Edit from "../Component/SingleProductComponent/Edit";
+import Layout from "../shared/Layout";
 
 const Cart = () => {
   const { cartItems, cartcout, HandleDeleteCart } = useContext(ProductContext);

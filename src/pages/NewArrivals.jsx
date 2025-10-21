@@ -2,8 +2,9 @@ import React, { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
 
 import { FaStar } from "react-icons/fa";
-import Layout from "../shared/Layout";
+
 import { Link } from "react-router-dom";
+import Layout from "../shared/Layout";
 
 const NewArrivals = () => {
   const { productData, HandleGetProducts } = useContext(ProductContext);

@@ -1,6 +1,7 @@
 import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope } from "react-icons/fa";
 import Layout from "../shared/Layout";
 
+
 const Contact = () => {
   return (
     <Layout>
