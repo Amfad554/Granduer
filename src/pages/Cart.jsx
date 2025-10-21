@@ -6,6 +6,7 @@ import { ImCancelCircle } from "react-icons/im";
 import Edit from "../Component/SingleProductComponent/Edit";
 import Layout from "../shared/Layout";
 
+
 const Cart = () => {
   const { cartItems, cartcout, HandleDeleteCart } = useContext(ProductContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
