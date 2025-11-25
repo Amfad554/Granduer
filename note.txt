@@ -1,0 +1,367 @@
+1."react-lines-ellipsis": "^0.16.1":::
+**Purpose: Truncates (shortens) long text with an ellipsis (...) if it doesn’t fit within a given container.
+
+**Usecase: Perfect for article previews, product descriptions, or anywhere you want to show just a few lines of text and cut    off the rest neatly. Display only 2 lines of a paragraph and replace the rest with ....
+
+**Get Package:npm install react-lines-ellipsis
+**Example:
+  <div style={{ width: "200px" }}>
+      <LinesEllipsis
+        text="This is a very long sentence that should be truncated after two lines."
+        maxLine="2"
+        ellipsis="..."
+        trimRight
+      />
+    </div>
+********************************************************************************************************************************
+2."react-share": "^5.2.2",:::
+    **Purpose: Provides ready-to-use social media share buttons for React.
+
+    **Usecase: Share blog posts, products, or any page on Facebook, Twitter (X), LinkedIn, WhatsApp, etc.
+
+    **Get  Package:npm install react-share
+
+    **Example:
+        import { FacebookShareButton, FacebookIcon } from "react-share";
+
+        <FacebookShareButton url="https://example.com">
+        <FacebookIcon size={32} round />
+        </FacebookShareButton>
+
+
+    **Media imports:
+        import {
+    FacebookShareButton, FacebookIcon,
+    TwitterShareButton, TwitterIcon,
+    WhatsappShareButton, WhatsappIcon,
+    TelegramShareButton, TelegramIcon,
+    LinkedinShareButton, LinkedinIcon,
+    PinterestShareButton, PinterestIcon,
+    RedditShareButton, RedditIcon,
+    EmailShareButton, EmailIcon,
+    }   from "react-share";
+
+********************************************************************************************************************************
+3."react-spinners": "^0.17.0",:::
+    **Purpose: A collection of loading spinner components built for React.
+
+    **Usecase: Show loading animations while fetching data, submitting forms, or processing actions.
+
+    **Get:npm install react-spinners
+
+    **Example:
+        import { ClipLoader } from "react-spinners";
+
+        <ClipLoader loading={true} size={50} color="#36d7b7" />
+   
+
+    **SampleView:https://www.davidhu.io/react-spinners/
+   
+
+
+********************************************************************************************************************************    
+    "react-toastify": "^11.0.5",::::
+        **Purpose: Lets you show toast notifications (pop-up messages) in your React app.
+
+        **Usecase: Alert users when an action is successful, failed, or needs attention.
+
+        **Example:
+            import React from "react";
+            import { toast, ToastContainer } from "react-toastify";
+            import "react-toastify/dist/ReactToastify.css";
+
+            function App() {
+                const notify = () => toast.success("Item added to cart!");
+
+                return (
+                    <div>
+                    <button onClick={notify}>Add to Cart</button>
+                    {/* 👇 Must include this once in your app */}
+                    <ToastContainer />
+                    </div>
+                );
+                }
+
+            export default App;
+
+
+********************************************************************************************************************************
+    "swiper": "^11.2.10",:::
+    Purpose: A modern touch slider/carousel library for web and mobile.
+Get:npm install swiper
+
+    Use case: Create image sliders, product carousels, testimonials, or galleries with swiping support.
+
+
+
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+    Example:
+        <Swiper
+        modules={[Pagination]}
+        breakpoints={{
+            640: { slidesPerView: 1 },
+            768: { slidesPerView: 2 },
+            1024: { slidesPerView: 3 },
+        }}
+        pagination={{ clickable: true }}
+        >
+        {/* slides here */}
+        </Swiper>
+
+
+
+
+
+
+
+import { createContext, useEffect, useState } from "react";
+import ProductData from "../data/ProductData";
+import { getProducts } from "../services/api/product";
+import { addToCartItems, getCartItems, updateCartItem, deleteCartItem } from "../services/api/cart";
+import { toast } from "react-toastify";
+
+export const ProductContext = createContext();
+
+export const ProductProvider = ({ children }) => {
+    const [ product, setProduct ] = useState([]);
+    const latest = product.filter((item) => item.latest === false ); 
+    const trending = product.filter((item) => item.trending === false);
+    const featured = product.filter((item) => item.featured);
+    const [cartItems, setCartItems] = useState({ products: [] });
+    const isAuthenticated = false;
+   
+    useEffect(() => {
+        fetchProduct()
+        fetchCart()
+    },[])
+
+    console.log(cartItems)
+    const fetchProduct = async() => {
+        try {
+            const data = await getProducts()
+            console.log("Data", data.data)
+            setProduct(data?.data)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const fetchCart = async () => {
+        try {
+            if(!isAuthenticated){
+                const storedCart = JSON.parse(localStorage.getItem("cartItems")) || { products: []};
+                if(storedCart){
+                    setCartItems(storedCart);
+                }else{
+                    toast.error("Failed to retrieve cart items");
+                }
+            }else {
+                const data = await getCartItems();
+                if(data){
+                    setCartItems(data);
+                }else{
+                    toast.error("Failed to retrieve cart items");
+                }
+            }
+            
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const addToCart = async (productId, quantity, product) => {
+        try {
+            if(!isAuthenticated) {
+                // const storedCart = JSON.parse(localStorage.getItem("cartItems" || { products: [] }));
+                const storedCart = JSON.parse(localStorage.getItem("cartItems")) || { products: [] };
+                const existingItem = storedCart?.products?.findIndex((items) => items?.product?.id === productId);
+                if(existingItem !== -1){
+                    // console.log(storedCart.products[existingItem].quantity)
+                    storedCart.products[existingItem].quantity += quantity
+                    storedCart.products[existingItem].amount = storedCart.products[existingItem].quantity * storedCart.products[existingItem].product?.price 
+                }else {
+                    storedCart?.products?.push({
+                        product,
+                        quantity,
+                        amount: product?.price * quantity
+                    })
+                }
+                if(storedCart){
+                    localStorage.setItem("cartItems", JSON.stringify(storedCart))
+                    setCartItems(storedCart)
+                    toast.success("Item added to cart")
+                    fetchCart()
+                }else {
+                    toast.error("Failed to add item to cart")
+                }
+            }else{
+                const data = await addToCartItems(productId, quantity);
+                if(data){
+                    setCartItems(data)
+                    toast.success("Item added to cart")
+                }else {
+                    toast.error("Failed to add item to cart")
+                }
+            }
+            
+        } catch (error) {
+            console.log(error)
+        }
+    }
+    
+    const updateCart = async (productId, quantity, product) => {
+        try {
+            if(!isAuthenticated) {
+                const storedCart = JSON.parse(localStorage.getItem("cartItems")) || { products: [] };
+                const existingItem = storedCart.products.findIndex(items => items.product.id === productId)
+                if(existingItem !== -1){
+                    storedCart.products[existingItem].quantity += quantity
+                    // storedCart.products[existingItem].productId = productId
+                    storedCart.products[existingItem].amount = storedCart.products[existingItem].quantity * storedCart.products[existingItem].product.price 
+                }else {
+                    storedCart.products.push({
+                        product,
+                        quantity,
+                        amount: product.price * quantity
+                    })
+                }
+                localStorage.setItem("cartItems", JSON.stringify(storedCart))
+                setCartItems(storedCart)
+                toast.success("Item updated in cart")
+                fetchCart()
+            }else{
+                const data = await updateCartItem(productId, quantity);
+                if(data){
+                    setCartItems(data)
+                    toast.success("Item updated in cart")
+                }else {
+                    toast.error("Failed to update item in cart")
+                }
+            }
+            
+        } catch (error) {
+            console.log(error)
+        }
+    }
+    
+    const deleteCart = async (productId) => {
+        try {
+            if(window.confirm("Are you sure you want to delete this product from your cart?")){
+                if(!isAuthenticated) {
+                    const storedCart = JSON.parse(localStorage.getItem("cartItems")) || { products: [] };
+                    const existingItem = storedCart.products.filter(items => items.product.id !== productId)
+                    if(existingItem){
+                    const updatedCart = { products: existingItem} 
+                    localStorage.setItem("cartItems", JSON.stringify(updatedCart))
+                    }
+                    // localStorage.setItem("cartItems", JSON.stringify(storedCart))
+
+                    setCartItems(storedCart)
+                    toast.success("Item deleted in cart")
+                    fetchCart()
+                }else{
+                    const data = await deleteCartItem(productId);
+                    if(data){
+                        setCartItems(data)
+                        toast.success("Item deleted in cart")
+                    }else {
+                        toast.error("Failed to delete item in cart")
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const calcSubtotal = () => {
+        return cartItems?.products?.reduce((acc, curr) => acc + curr.amount, 0)
+    }
+    const calcVat = () => {
+        return calcSubtotal() * 0.075;
+    }
+    const calcTotal = () => {
+        return calcSubtotal() + calcVat();
+    }
+    
+  return (
+    <ProductContext.Provider
+      value={{
+        product,
+        latest,
+        trending,
+        featured,
+        addToCart,
+        updateCart,
+        deleteCart,
+        cartItems,
+        calcSubtotal,
+        calcVat,
+        calcTotal,
+      }}
+    >
+      {children}
+    </ProductContext.Provider>
+  );
+};
+
+
+
+
+
+
+
+
+
+
+
+ const HandleAddTCart = (prod, quantity, size = null, color = null) => {
+    if (!isAutentify) {
+      // Get existing cart or initialize
+      let storedCartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+
+      // Find if product already exists in the cart
+      const existingItem = storedCartItems.find(
+        (item) => parseInt(item.id) === parseInt(prod.id)
+      );
+
+      let updatedCartItems;
+      if (existingItem) {
+        // Create a new array with updated quantity for the existing item
+        updatedCartItems = storedCartItems.map((item) =>
+          parseInt(item.id) === parseInt(prod.id)
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      } else {
+        // Add a new product entry if it doesn’t exist
+        updatedCartItems = [
+          ...storedCartItems,
+          { ...prod, quantity, size, color },
+        ];
+      }
+
+      // Save updated cart in localStorage
+      localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+      setCartItems(updatedCartItems);
+      console.log("Updated Cart:", updatedCartItems);
+    } else {
+      console.log("User is authenticated — handle API cart instead");
+    }
+  };
+import { AnimatePresence, motion } from "framer-motion";
+<AnimatePresence>
+
+    <motion.li
+      key={item.id}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+    >
+      {item.name}
+    </motion.li>
+
+</AnimatePresence>

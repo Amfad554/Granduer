@@ -29,12 +29,6 @@ import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout/Layout";
 
-
-
-
-
-
-
 const Home = () => {
   const { HandleGetProducts, productData, HandleAddTCart } = useContext(ProductContext);
   const [bestSeller, setBestSeller] = useState([]);
@@ -156,7 +150,14 @@ const Home = () => {
                       </div>
                       <div className="p-2">
                         <p className="text-black font-bold mt-2">{few.name}</p>
-                        <p className="text-black mt-2 z-50">{few.description}</p>
+                        <div className="w-full">
+                          <LinesEllipsis
+                          text={few.description}
+                          maxLine="1"
+                          ellipsis="..."
+                          trimRight
+                          />
+                          </div>
 
                         <div className="flex justify-between items-center mt-2">
                           <span className="p-2 bg-primary text-white rounded-md">
@@ -244,5 +245,4 @@ const Home = () => {
     </Layout>
   );
 };
-
 export default Home;

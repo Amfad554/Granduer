@@ -15,6 +15,9 @@ import ProductProvider from "./Context/ProductContext.jsx";
 import SingleProduct from "./pages/SingleProduct.jsx";
 
 import UserLoginPage from "./pages/UserLogin.jsx";
+import AdminDash from "./Dashboard/AdminDash.jsx";
+import UserDash from "./Dashboard/userDash.jsx";
+import ThankYouPage from "./pages/ThankYouPage.jsx";
 
 const router = createBrowserRouter([
   {
@@ -57,9 +60,21 @@ const router = createBrowserRouter([
         path: "/product/:id",
         element: <SingleProduct />,
       },
-       {
+      {
         path: "/login",
         element: <UserLoginPage />,
+      },
+      {
+        path: "/AdminDash",
+        element: <AdminDash />,
+      },
+      {
+        path: "/userDash",
+        element: <UserDash />,
+      },
+      {
+        path: "/thankyou",
+        element: <ThankYouPage />,
       },
     ],
   },
