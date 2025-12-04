@@ -65,7 +65,7 @@ const ProductProvide = ({ children }) => {
 
   const HandleGetProducts = async () => {
     try {
-      const res = await fetch(`${baseUrl} getAllProduct`, {
+      const res = await fetch(`${baseUrl}getAllProduct`,{
         method: "GET",
       });
 
