@@ -67,7 +67,7 @@ export const loginUser = async (userData, userCart) => {
             )
         }
 
-        return { ok: res.ok, data, token }
+        return { ok: res.ok, data, token, decoded }
     } catch (error) {
         console.log('error', error.message)
         return { ok: false, error: error.message }

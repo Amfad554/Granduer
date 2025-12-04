@@ -5,7 +5,8 @@ import DotLoader from "react-spinners/DotLoader";
 
 import "react-toastify/dist/ReactToastify.css";
 
-export const baseUrl = "http://localhost:5000/";
+export const baseUrl = "https://ecombackend-cqbc.onrender.com/";
+
 
 function App() {
   const [loading, setLoading] = useState(true);

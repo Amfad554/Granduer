@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -17,8 +16,14 @@ import { toast } from "react-toastify";
 import { loginUser, regUser } from "../services/userService";
 
 const UserLoginPage = () => {
-  const { HandleLogin, isAuthenticated, cartItems, setCartItems } =
-    useContext(ProductContext);
+  const {
+    HandleLogin,
+    isAuthenticated,
+    cartItems,
+    setCartItems,
+    setIsAuthentified,
+    setToken,
+  } = useContext(ProductContext);
   const navigate = useNavigate();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -214,8 +219,16 @@ const UserLoginPage = () => {
         if (res.ok) {
           toast.success(res?.data?.message);
           setCartItems([]);
+          localStorage.setItem("isAuthentified", "true");
+          setIsAuthentified(true);
+          setToken(res.token);
           localStorage.setItem("token", res.token);
+          if (res.decoded) {
+            localStorage.setItem("user", JSON.stringify(res.decoded));
+          }
+
           localStorage.removeItem("cartItems");
+          navigate("/")
         } else {
           toast.error(res?.data?.message || res.error);
         }

@@ -8,6 +8,11 @@ import { ProductContext } from "../Context/ProductContext";
 
 const Navbar = () => {
   const {  cartCout } = useContext(ProductContext);
+  useEffect(()=>{
+    console.log("cartcount:",cartCout);
+    
+  },[cartCout])
+  // eslint-disable-next-line no-unused-vars
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMenuOpen, setIsmenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -141,7 +146,7 @@ const Navbar = () => {
           </div>
 
           {/* Logo */}
-          <Link to="/" className="font-bold font-serif italic text-2xl">
+          <Link to="/" className="font-bold font-serif italic text-2xl"> 
             Granduer
           </Link>
 

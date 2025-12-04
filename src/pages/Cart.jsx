@@ -1,213 +1,381 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
-
-import { RiDeleteBin3Fill, RiEditCircleFill } from "react-icons/ri";
-import { ImCancelCircle } from "react-icons/im";
-import Edit from "../Component/SingleProductComponent/Edit";
 import Layout from "../Shared/Layout/Layout";
-
-
+import { RiDeleteBin3Fill, RiEditCircleFill } from "react-icons/ri";
+import { Link } from "react-router-dom";
+import { ImCancelCircle } from "react-icons/im";
+import Edit from "../Context/Edit";
+import { baseUrl } from "../App";
+import { toast } from "react-toastify";
 
 const Cart = () => {
-  const { cartItems, cartcout, HandleDeleteCart } = useContext(ProductContext);
+  const { cartItems, cartcout, HandleDeleteCart, token, User } =
+    useContext(ProductContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [product, setProd] = useState(null);
-  const [selectedSize, setSelectedSize] = useState("");
+  const [prod, setProd] = useState(null);
+  const [selectedSize, setSetectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Update selected fields dynamically
   useEffect(() => {
-    if (selectedSize) setProd((prev) => ({ ...prev, size: selectedSize }));
-    if (selectedColor) setProd((prev) => ({ ...prev, color: selectedColor }));
-    if (quantity) setProd((prev) => ({ ...prev, quantity }));
+    console.log("prod:", prod);
+  }, [prod]);
+
+  useEffect(() => {
+    if (selectedSize) {
+      setProd((prv) => ({ ...prv, size: selectedSize }));
+    }
+    if (selectedColor) {
+      setProd((prv) => ({ ...prv, color: selectedColor }));
+    }
+    if (quantity) {
+      setProd((prv) => ({ ...prv, quantity: quantity }));
+    }
   }, [selectedColor, selectedSize, quantity]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isModalOpen]);
+
+  const HandleInitializePayment = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${baseUrl}initializePayment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token && token}`,
+        },
+        body: JSON.stringify({ email: User && User?.email }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        console.log(data);
+        setIsLoading(false);
+        setTimeout(() => {
+          toast.success(data.message);
+        }, 3000);
+        window.location.href = data?.link;
+      } else {
+        console.log(data);
+        setIsLoading(false);
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log("error:", error);
+    }
+  };
 
   return (
     <Layout>
-      <div className="min-h-screen bg-white py-10 px-4 md:px-10 relative flex flex-col">
-        <h1 className="text-4xl font-bold text-center mb-10 tracking-wide">
-          Your Cart
-        </h1>
-
-        {/* Modal */}
-        <div
-          className={`fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 transition-all duration-300 ${
-            isModalOpen ? "opacity-100 visible" : "opacity-0 invisible"
-          }`}
-        >
-          <div className="relative w-[92%] max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[88vh] overflow-y-auto">
-            <span
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-primary bg-white rounded-full shadow-md border border-gray-300 hover:bg-black hover:text-white transition p-2 cursor-pointer"
-            >
-              <ImCancelCircle className="h-5 w-5" />
-            </span>
-            <Edit
-              product={product}
-              setSelectedSize={setSelectedSize}
-              selectedSize={selectedSize}
-              selectedColor={selectedColor}
-              setSelectedColor={setSelectedColor}
-              setQuantity={setQuantity}
-              quantity={quantity}
-              closeModal={() => setIsModalOpen(false)}
-            />
-          </div>
-        </div>
-
-        {cartItems && cartItems.length > 0 ? (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-hidden border border-gray-200 rounded-2xl shadow-md">
-              <table className="min-w-full border-collapse">
-                <thead className="bg-gray-100">
-                  <tr className="text-left text-gray-700">
-                    <th className="py-4 px-6 font-semibold">Product</th>
-                    <th className="py-4 px-6 font-semibold">Price</th>
-                    <th className="py-4 px-6 font-semibold">Quantity</th>
-                    <th className="py-4 px-6 font-semibold">Total</th>
-                    <th className="py-4 px-6 text-center font-semibold">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cartItems.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="border-t hover:bg-gray-50 transition duration-300"
-                    >
-                      <td className="py-4 px-6 flex items-center gap-4">
-                        <img
-                          src={item?.image}
-                          alt={item?.name}
-                          className="w-14 h-14 object-cover rounded-lg shadow-sm"
-                        />
-                        <span className="font-medium text-gray-800">
-                          {item?.name}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-gray-700">
-                        ${item?.price}
-                      </td>
-                      <td className="py-4 px-6 text-gray-700">
-                        {item?.quantity}
-                      </td>
-                      <td className="py-4 px-6 font-semibold text-gray-800">
-                        ${(item?.price * item?.quantity).toFixed(2)}
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex justify-center gap-3">
-                          {/* Edit Button */}
-                          <span
-                            onClick={() => {
-                              setIsModalOpen(true);
-                              setProd(item);
-                            }}
-                            className="bg-black text-white p-2 rounded-md hover:bg-gray-800 transition"
-                            title="Edit"
-                          >
-                            <RiEditCircleFill />
-                          </span>
-
-                          {/* Delete Button */}
-                          <span
-                            onClick={() => HandleDeleteCart(item.id)}
-                            className="bg-red-600 text-white p-2 rounded-md hover:bg-red-700 transition"
-                            title="Delete"
-                          >
-                            <RiDeleteBin3Fill />
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 md:px-10 relative">
+         {isLoading && (
+          <div className="fixed inset-0 z-50 flex justify-center items-center bg-white bg-opacity-75">
+            <div className="flex flex-col items-center">
+              <PulseLoader size={12} color="#000" />
+              <p className="text-black mt-2 font-semibold">Logging in...</p>
             </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-5">
-              {cartItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition"
-                >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-                    <div>
-                      <h3 className="font-semibold text-lg">{item.name}</h3>
-                      <p className="text-gray-600">${item.price}</p>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center mt-3 text-sm text-gray-700">
-                    <span>Qty: {item.quantity}</span>
-                    <span className="font-semibold">
-                      Total: ${(item.price * item.quantity).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => {
-                        setIsModalOpen(true);
-                        setProd(item);
-                      }}
-                      className="flex-1 bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => HandleDeleteCart(item.id)}
-                      className="flex-1 bg-red-600 text-white py-2 rounded-md hover:bg-red-700 transition"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Summary */}
-            <div className="flex justify-end mt-10">
-              <div className="bg-gray-100 p-6 rounded-2xl shadow-md w-full sm:w-2/3 md:w-1/3">
-                <div className="flex justify-between mb-3 text-gray-700">
-                  <span>Items in Cart:</span>
-                  <span className="font-semibold">{cartcout}</span>
-                </div>
-                <div className="flex justify-between text-xl font-bold text-gray-900">
-                  <span>Total:</span>
-                  <span>
-                    $
-                    {cartItems
-                      .reduce(
-                        (sum, item) => sum + item.price * item.quantity,
-                        0
-                      )
-                      .toFixed(2)}
-                  </span>
-                </div>
-                <button className="mt-6 w-full bg-black text-white py-3 rounded-md font-semibold hover:bg-gray-800 transition">
-                  Proceed to Checkout
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center mt-20 text-gray-600">
-            <p className="text-xl mb-6">Your cart is currently empty 🛒</p>
-            <a
-              href="/"
-              className="bg-black text-white px-6 py-3 rounded-md font-medium hover:bg-gray-800 transition"
-            >
-              Continue Shopping
-            </a>
           </div>
         )}
+
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl md:text-4xl font-bold text-center mb-2 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            Your Cart
+          </h1>
+          <p className="text-center text-gray-600 mb-8 text-sm">
+            {cartcout} {cartcout === 1 ? "item" : "items"} in your shopping cart
+          </p>
+
+          {/* Improved Mobile-Responsive Modal */}
+          <div
+            className={`${
+              isModalOpen ? "" : "hidden"
+            } fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300`}
+            onClick={() => setIsModalOpen(false)}
+          >
+            <div
+              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button - Sticky on mobile */}
+              <div className="sticky top-0 right-0 z-10 flex justify-end p-3 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 hover:scale-110 transition-all duration-200"
+                >
+                  <ImCancelCircle className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Modal Content with proper padding */}
+              <div className="p-4 sm:p-6">
+                <Edit
+                  prod={prod}
+                  setSetectedSize={setSetectedSize}
+                  setSelectedColor={setSelectedColor}
+                  setQuantity={setQuantity}
+                  quantity={quantity}
+                />
+              </div>
+            </div>
+          </div>
+
+          {cartItems && cartItems.length > 0 ? (
+            <div className="space-y-8">
+              {/* Desktop Table */}
+              <div className="hidden md:block bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+                <table className="min-w-full">
+                  <thead className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-200">
+                    <tr className="text-left text-gray-700">
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">
+                        Quantity
+                      </th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">
+                        Total
+                      </th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider text-center">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {cartItems.map((item, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-gray-50 transition-all duration-200 group"
+                      >
+                        <td className="py-4 px-5">
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-md group-hover:shadow-lg transition-shadow duration-200 flex-shrink-0">
+                              <img
+                                src={item?.image || item?.product?.image}
+                                alt={item?.name || item?.product?.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                            </div>
+                            <span className="font-semibold text-gray-800 text-sm">
+                              {item?.name || item?.product?.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-5 text-gray-700 font-medium">
+                          ${item?.price || item?.product?.price}
+                        </td>
+                        <td className="py-4 px-5">
+                          <span className="inline-flex items-center justify-center bg-gray-100 text-gray-800 font-semibold px-3 py-1.5 rounded-lg min-w-[50px] text-sm">
+                            {item?.quantity}
+                          </span>
+                        </td>
+                        <td className="py-4 px-5 font-bold text-gray-900">
+                          $
+                          {(
+                            (item?.price || item?.product?.price) *
+                            item?.quantity
+                          ).toFixed(2)}
+                        </td>
+                        <td className="py-4 px-5">
+                          <div className="flex justify-center gap-2">
+                            <button
+                              onClick={() => {
+                                console.log("item:", item);
+                                setIsModalOpen(true);
+                                setProd(item);
+                              }}
+                              title="Edit"
+                              className="p-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:shadow-lg hover:scale-110 transition-all duration-200 cursor-pointer"
+                            >
+                              <RiEditCircleFill className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                HandleDeleteCart(item?.id || item?.productid);
+                              }}
+                              title="Delete"
+                              className="p-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:shadow-lg hover:scale-110 transition-all duration-200 cursor-pointer"
+                            >
+                              <RiDeleteBin3Fill className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="space-y-4 md:hidden">
+                {cartItems.map((item, index) => (
+                  <div
+                    key={index}
+                    className="bg-white border border-gray-200 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden shadow-md flex-shrink-0">
+                        <img
+                          src={item.image || item?.product?.image}
+                          alt={item.name || item?.product?.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg text-gray-900 mb-1">
+                          {item.name || item?.product?.name}
+                        </h3>
+                        <p className="text-gray-600 font-semibold text-lg">
+                          ${item.price || item?.product?.price}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600 font-medium">
+                          Quantity:
+                        </span>
+                        <span className="bg-white px-4 py-1.5 rounded-lg font-semibold text-gray-800 border border-gray-200">
+                          {item.quantity}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                        <span className="text-gray-700 font-semibold">
+                          Total:
+                        </span>
+                        <span className="font-bold text-xl text-gray-900">
+                          $
+                          {(
+                            (item?.price || item?.product?.price) *
+                            item?.quantity
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          console.log("item:", item);
+                          setIsModalOpen(true);
+                          setProd(item);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
+                      >
+                        <RiEditCircleFill className="w-5 h-5" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          HandleDeleteCart(item?.id || item?.productid);
+                          console.log("item:", item);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200"
+                      >
+                        <RiDeleteBin3Fill className="w-5 h-5" />
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Cart Summary */}
+              <div className="flex justify-end">
+                <div className="bg-white p-8 rounded-2xl w-full sm:w-2/3 md:w-1/2 lg:w-1/3 shadow-xl border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-200">
+                    Order Summary
+                  </h2>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="flex justify-between items-center text-gray-700">
+                      <span className="font-medium">Items in Cart:</span>
+                      <span className="bg-gray-100 px-4 py-1.5 rounded-lg font-semibold">
+                        {cartcout}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-gray-700">
+                      <span className="font-medium">Subtotal:</span>
+                      <span className="font-semibold text-lg">
+                        $
+                        {cartItems
+                          .reduce(
+                            (sum, item) =>
+                              sum +
+                              (item.price || item?.product?.price) *
+                                item.quantity,
+                            0
+                          )
+                          .toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t-2 border-gray-200 mb-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xl font-bold text-gray-900">
+                        Total:
+                      </span>
+                      <span className="text-2xl font-bold text-gray-900">
+                        $
+                        {cartItems
+                          .reduce(
+                            (sum, item) =>
+                              sum +
+                              (item.price || item?.product?.price) *
+                                item.quantity,
+                            0
+                          )
+                          .toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button 
+                  onClick ={(e) => {
+                    HandleInitializePayment(e);
+                  }}
+                  className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
+                    Proceed to Checkout
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center mt-20 bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto border border-gray-200">
+              <div className="text-6xl mb-6">🛒</div>
+              <p className="text-2xl font-semibold text-gray-800 mb-2">
+                Your cart is empty
+              </p>
+              <p className="text-gray-600 mb-8 text-center">
+                Looks like you haven't added any items yet
+              </p>
+              <a
+                href="/"
+                className="bg-black text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                Continue Shopping
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
