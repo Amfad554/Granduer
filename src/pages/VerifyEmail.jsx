@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams} from "react-router-dom";
 import PulseLoader from "react-spinners/PulseLoader";
 import { FaCheckCircle, FaTimesCircle, FaEnvelope } from "react-icons/fa";
 import Layout from "../Shared/Layout/Layout";
@@ -7,11 +7,11 @@ import { useEffect } from "react";
 import { useState } from "react";
 
 const VerifyEmail = () => {
-  const [searchParams] = useSearchParams();
+const {token} = useParams();
   const navigate = useNavigate();
   const [verificationStatus, setVerificationStatus] = useState("loading");
   const [message, setMessage] = useState("");
-  const token = searchParams.get("token");
+
   useEffect(() => {
     verifyEmail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
