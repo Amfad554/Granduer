@@ -21,7 +21,7 @@ export const regUser = async formData => {
 export const loginUser = async (userData, userCart) => {
     try {  
         //make req
-        const res = await fetch(`${baseUrl}loginUser`, {
+        const res = await fetch("http://localhost:5000/loginUser", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

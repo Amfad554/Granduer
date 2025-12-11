@@ -18,6 +18,7 @@ import UserLoginPage from "./pages/UserLogin.jsx";
 import AdminDash from "./Dashboard/AdminDash.jsx";
 import UserDash from "./Dashboard/userDash.jsx";
 import ThankYouPage from "./pages/ThankYouPage.jsx";
+import VerifyEmail from "./pages/verifyemail.jsx";
 
 const router = createBrowserRouter([
   {
@@ -75,6 +76,10 @@ const router = createBrowserRouter([
       {
         path: "/thankyou",
         element: <ThankYouPage />,
+      },
+      {
+        path: "/verifyemail",
+        element: <VerifyEmail />,
       },
     ],
   },
