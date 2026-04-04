@@ -31,7 +31,7 @@ const {token} = useParams();
         headers: {
           "Content-Type": "application/json",
         },
-        body: token ,
+        body: JSON.stringify({ token }) ,  // ✅ This sends proper JSON ,
       });
 
       const data = await response.json();

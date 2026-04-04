@@ -24,7 +24,7 @@ import {
 } from "react-share";
 import "react-toastify/dist/ReactToastify.css";
 import { Link, NavLink } from "react-router-dom";
-import { FaArrowCircleRight, FaArrowRight, FaHeart,  FaShoppingCart } from "react-icons/fa";
+import { FaArrowCircleRight, FaArrowRight, FaHeart, FaShoppingCart } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout/Layout";
@@ -87,7 +87,7 @@ const Home = () => {
         </div>
 
         {/* Product Slider */}
-        <div className="w-full md:px-4 px-28 pb-16 flex flex-col justify-center items-center">
+        <div className="w-full md:px-4 px-4 pb-16 flex flex-col justify-center items-center">
           <Swiper
             autoplay={{ delay: 1000, disableOnInteraction: false }}
             spaceBetween={20}
@@ -106,7 +106,7 @@ const Home = () => {
               productData.map((product) => (
                 <SwiperSlide
                   key={product.id}
-                  className="flex justify-center items-center md:w-full w-1/2 mt-10 rounded-t-[50%] overflow-hidden"
+                  className="flex justify-center items-center w-full mt-10 rounded-t-[50%] overflow-hidden"
                 >
                   <Link to={`/product/${product.id}`} className="w-full h-full">
                     <img
@@ -152,12 +152,12 @@ const Home = () => {
                         <p className="text-black font-bold mt-2">{few.name}</p>
                         <div className="w-full">
                           <LinesEllipsis
-                          text={few.description}
-                          maxLine="1"
-                          ellipsis="..."
-                          trimRight
+                            text={few.description}
+                            maxLine="1"
+                            ellipsis="..."
+                            trimRight
                           />
-                          </div>
+                        </div>
 
                         <div className="flex justify-between items-center mt-2">
                           <span className="p-2 bg-primary text-white rounded-md">
@@ -168,7 +168,7 @@ const Home = () => {
                             <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
                               <FaHeart className="h-6 w-6" />
                             </span>
-                            <span onClick={(()=> HandleAddTCart(few, 1, few?.defaultSize, few?.defaultColor))} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
+                            <span onClick={(() => HandleAddTCart(few, 1, few?.defaultSize, few?.defaultColor))} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
                               <FaShoppingCart className="h-6 w-6" />
                             </span>
                           </div>
@@ -207,9 +207,9 @@ const Home = () => {
 
                           <div className="flex justify-between items-center gap-4">
                             <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
-                              <FaHeart  className="h-6 w-6" />
+                              <FaHeart className="h-6 w-6" />
                             </span>
-                            <span onClick={()=> HandleAddTCart(best, 1, best?.defaultSize, best?.defaultColor)} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
+                            <span onClick={() => HandleAddTCart(best, 1, best?.defaultSize, best?.defaultColor)} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
                               <FaShoppingCart className="h-6 w-6" />
                             </span>
                           </div>
