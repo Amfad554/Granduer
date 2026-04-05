@@ -3,54 +3,62 @@ import { jwtDecode } from 'jwt-decode';
 
 export const regUser = async formData => {
     try {
-        const res = await fetch(`${baseUrl}registerUser`, {
+        // CHANGED: 'registerUser' -> 'register'
+        const res = await fetch(`${baseUrl}register`, {
             method: 'POST',
             body: formData
         })
 
-        const data = await res.json()
-        console.log('res', data)
+        // Safety check: If server sends HTML (404), don't try to parse as JSON
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await res.text();
+            return { ok: false, error: "Server error or route not found" };
+        }
 
+        const data = await res.json()
         return { ok: res.ok, data }
     } catch (error) {
-        console.log('error:', error.message)
         return { ok: false, error: error.message }
     }
 }
 
 export const loginUser = async (userData, userCart) => {
     try {  
-        //make req
-        const res = await fetch("http://localhost:5000/loginUser", {
+        // CHANGED: Hardcoded localhost -> baseUrl
+        // CHANGED: 'loginUser' -> 'login'
+        const res = await fetch(`${baseUrl}login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-
             },
             body: JSON.stringify(userData)
         })
 
-        //get response
-        const data = await res.json()
-        console.log(data);
-
-        let token = res.headers.get('authorization') || data.token
-        //remove Bearer
-        if (token && token.startsWith('Bearer ')) {
-            token = token.split(' ')[1]
+        if (!res.ok) {
+            const errorData = await res.json();
+            return { ok: false, data: errorData };
         }
-        console.log('token', token)
-        const decoded = jwtDecode(token)
-        console.log('decoded', decoded)
 
+        const data = await res.json()
+        
+        let token = data.token // Simplified: Get token directly from your JSON response
+        
+        if (!token) {
+            return { ok: false, error: "No token received" };
+        }
+
+        const decoded = jwtDecode(token)
+
+        // Sync Cart Logic
         if (userCart.length > 0) {
             await Promise.all(
                 userCart.map(async item => {
-                    const response = await fetch(`${baseUrl}addcart`, {
+                    await fetch(`${baseUrl}addcart`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            Authorization: ` Bearer ${token}`,
+                            Authorization: `Bearer ${token}`, // Removed leading space in template string
                         },
                         body: JSON.stringify({
                             userid: decoded.userid,
@@ -60,9 +68,6 @@ export const loginUser = async (userData, userCart) => {
                             quantity: item?.quantity
                         })
                     })
-
-                    const cartRes = await response.json()
-                    console.log('cartRes', cartRes)
                 })
             )
         }
