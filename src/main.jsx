@@ -18,7 +18,8 @@ import UserLoginPage from "./pages/UserLogin.jsx";
 import AdminDash from "./Dashboard/AdminDash.jsx";
 import UserDash from "./Dashboard/userDash.jsx";
 import ThankYouPage from "./pages/ThankYouPage.jsx";
-import VerifyEmail from "./pages/verifyemail.jsx";
+// Change this line in main.jsx
+import VerifyEmail from "./pages/VerifyEmail.jsx";
 
 const router = createBrowserRouter([
   {

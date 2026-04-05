@@ -1,13 +1,14 @@
-import { useNavigate, useParams} from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import PulseLoader from "react-spinners/PulseLoader";
 import { FaCheckCircle, FaTimesCircle, FaEnvelope } from "react-icons/fa";
 import Layout from "../Shared/Layout/Layout";
 import { toast } from "react-toastify";
 import { useEffect } from "react";
 import { useState } from "react";
+import { baseUrl } from '../App'; // Import your baseUrl
 
 const VerifyEmail = () => {
-const {token} = useParams();
+  const { token } = useParams();
   const navigate = useNavigate();
   const [verificationStatus, setVerificationStatus] = useState("loading");
   const [message, setMessage] = useState("");
@@ -26,12 +27,12 @@ const {token} = useParams();
       }
 
       // Call your backend API to verify the token
-      const response = await fetch(`http://localhost:5000/verifyemail`, {
+      const response = await fetch(`${baseUrl}verifyemail`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ token }) ,  // ✅ This sends proper JSON ,
+        body: JSON.stringify({ token }),
       });
 
       const data = await response.json();
