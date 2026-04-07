@@ -29,8 +29,9 @@ const ProductProvide = ({ children }) => {
     }
   };
 
-  // ✅ FIX: Use getLocalData helper instead of raw JSON.parse
-  const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
+  const [cartItems, setCartItems] = useState(
+    JSON.parse(localStorage.getItem("cartItems")) || []
+  );
   const [User, setUser] = useState(() => getLocalData("user", {}));
 
   const [token, setToken] = useState(localStorage.getItem("token") || "");
@@ -47,9 +48,12 @@ const ProductProvide = ({ children }) => {
   }, [User]);
 
   useEffect(() => {
-    console.log("cart:", cartItems);
-    if (cartItems) {
-      const count = cartItems.reduce((acc, curr) => acc + curr?.quantity, 0);
+    if (cartItems && Array.isArray(cartItems)) {
+      const count = cartItems.reduce((acc, curr) => {
+        // Use the same safety logic here!
+        const qty = curr?.quantity || 0;
+        return acc + Number(qty);
+      }, 0);
       setCartCount(count);
     }
   }, [cartItems]);
@@ -61,6 +65,32 @@ const ProductProvide = ({ children }) => {
       setfavouriteCout(count);
     }
   }, [favoriteItem]);
+// Add this inside ProductProvide in ProductContext.js
+useEffect(() => {
+  const fetchUserCart = async () => {
+    // Only fetch if we are authenticated and have a token/userID
+    if (isAuthentified && token && User?.userid) {
+      try {
+        const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const items = data?.data?.Productcart || [];
+          setCartItems(items);
+          localStorage.setItem("cartItems", JSON.stringify(items));
+        }
+      } catch (error) {
+        console.error("Failed to fetch server cart:", error);
+      }
+    }
+  };
+
+  fetchUserCart();
+}, [isAuthentified, token, User?.userid]); // Runs when login status or user changes
 
   const HandleGetProducts = async () => {
     try {
@@ -148,6 +178,7 @@ const ProductProvide = ({ children }) => {
             JSON.stringify(data?.data?.Productcart)
           );
           setCartItems(data?.data?.Productcart);
+
         } else {
           toast.error(data?.message);
         }
@@ -178,11 +209,11 @@ const ProductProvide = ({ children }) => {
         const updatedCartItems = storedCartItems.map((item) =>
           parseInt(item?.id) === parseInt(prod?.id)
             ? {
-                ...item,
-                size: prod?.size ?? item?.size,
-                color: prod?.color ?? item?.color,
-                quantity: prod?.quantity ?? item?.quantity,
-              }
+              ...item,
+              size: prod?.size ?? item?.size,
+              color: prod?.color ?? item?.color,
+              quantity: prod?.quantity ?? item?.quantity,
+            }
             : item
         );
 

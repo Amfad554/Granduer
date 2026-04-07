@@ -324,7 +324,6 @@ const Cart = () => {
                     <div className="flex justify-between items-center text-gray-700">
                       <span className="font-medium">Items in Cart:</span>
                       <span className="bg-gray-100 px-4 py-1.5 rounded-lg font-semibold">
-                        {/* ✅ FIX: cartCout (capital C) */}
                         {cartCout}
                       </span>
                     </div>
@@ -333,13 +332,12 @@ const Cart = () => {
                       <span className="font-semibold text-lg">
                         $
                         {cartItems
-                          .reduce(
-                            (sum, item) =>
-                              sum +
-                              (item.price || item?.product?.price) *
-                              item.quantity,
-                            0
-                          )
+                          .reduce((sum, item) => {
+                            // ✅ Handle both local (item.price) and API (item.product.price) structures
+                            const price = item?.price || item?.product?.price || 0;
+                            const qty = item?.quantity || 0;
+                            return sum + (Number(price) * Number(qty));
+                          }, 0)
                           .toFixed(2)}
                       </span>
                     </div>
@@ -353,24 +351,26 @@ const Cart = () => {
                       <span className="text-2xl font-bold text-gray-900">
                         $
                         {cartItems
-                          .reduce(
-                            (sum, item) =>
-                              sum +
-                              (item.price || item?.product?.price) *
-                              item.quantity,
-                            0
-                          )
+                          .reduce((sum, item) => {
+                            const price = item?.price || item?.product?.price || 0;
+                            const qty = item?.quantity || 0;
+                            return sum + (Number(price) * Number(qty));
+                          }, 0)
                           .toFixed(2)}
                       </span>
                     </div>
                   </div>
 
                   <button
-                    onClick={(e) => {
-                      HandleInitializePayment(e);
-                    }}
-                    className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
-                    Proceed to Checkout
+                    onClick={(e) => HandleInitializePayment(e)}
+                    disabled={isLoading || cartItems.length === 0}
+                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 transform 
+        ${isLoading || cartItems.length === 0
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-black text-white hover:bg-gray-800 hover:shadow-2xl hover:scale-[1.02]"
+                      }`}
+                  >
+                    {isLoading ? "Processing..." : "Proceed to Checkout"}
                   </button>
                 </div>
               </div>
