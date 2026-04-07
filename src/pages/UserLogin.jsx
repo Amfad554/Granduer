@@ -189,8 +189,8 @@ const UserLoginPage = () => {
     try {
       if (!isLogin && !isReset) {
         const formData = new FormData();
-        formData.append("name", `${inputs.firstname} ${inputs.lastname}`.trim());
-
+        formData.append("firstname", inputs.firstname);
+        formData.append("lastname", inputs.lastname);
         formData.append("email", inputs.email);
         formData.append("phone", inputs.phone);
         formData.append("address", inputs.address);
@@ -271,8 +271,8 @@ const UserLoginPage = () => {
                   resetInputs();
                 }}
                 className={`w-1/2 py-4 font-semibold transition-all ${isLogin
-                    ? "bg-black text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
               >
                 Login
@@ -283,8 +283,8 @@ const UserLoginPage = () => {
                   resetInputs();
                 }}
                 className={`w-1/2 py-4 font-semibold transition-all ${!isLogin
-                    ? "bg-black text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
               >
                 Sign Up
@@ -470,8 +470,8 @@ const UserLoginPage = () => {
                   onChange={handleInputChange}
                   placeholder="Confirm Password"
                   className={`w-full p-3 rounded-lg border-2 ${errors.confirmpassword
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    ? "border-red-500"
+                    : "border-gray-300"
                     }`}
                 />
                 <button
