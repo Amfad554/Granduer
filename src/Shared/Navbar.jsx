@@ -6,7 +6,10 @@ import { Link, NavLink } from "react-router-dom";
 import { ProductContext } from "../Context/ProductContext";
 
 const Navbar = () => {
-  const { cartCout, isAuthentified } = useContext(ProductContext); // ✅ pull isAuthentified from context
+  const { cartCout, isAuthentified, token } = useContext(ProductContext);
+
+// Only treat user as logged in if BOTH isAuthentified is true AND a valid token exists
+const isLoggedIn = isAuthentified && !!token;
 
   useEffect(() => {
     console.log("cartcount:", cartCout);
@@ -81,12 +84,11 @@ const Navbar = () => {
               </div>
             )}
 
-            {/* ✅ Uses isAuthentified from context */}
             <NavLink
-              to={isAuthentified ? "/dashboard" : "/login"}
+              to={isLoggedIn ? "/dashboard" : "/login"}
               className="border border-white bg-black p-2 rounded-3xl hover:bg-white hover:text-black transition cursor-pointer"
             >
-              {isAuthentified ? <FaTachometerAlt /> : <FaUser />}
+              {isLoggedIn ? <FaTachometerAlt /> : <FaUser />}
             </NavLink>
 
             <NavLink
@@ -152,12 +154,12 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-4">
-            {/* ✅ Uses isAuthentified from context */}
+            {/* ✅ Uses isLoggedIn (isAuthentified + token) */}
             <Link
-              to={isAuthentified ? "/dashboard" : "/login"}
+              to={isLoggedIn ? "/dashboard" : "/login"}
               className="p-4 text-white text-3xl"
             >
-              {isAuthentified ? <FaTachometerAlt /> : <FaUser />}
+              {isLoggedIn ? <FaTachometerAlt /> : <FaUser />}
             </Link>
 
             <span
@@ -171,10 +173,11 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`${isMenuOpen
+          className={`${
+            isMenuOpen
               ? "max-h-[2000px] opacity-100 block transition duration-500"
               : "max-h-0 opacity-0 hidden transition-all duration-500"
-            } absolute left-0 w-full bg-white text-black`}
+          } absolute left-0 w-full bg-white text-black`}
         >
           <div className="flex flex-col items-center gap-4 p-4">
             {navlinks.map((item) => (
