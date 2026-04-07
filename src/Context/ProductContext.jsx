@@ -1,13 +1,11 @@
-import { createContext, useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { baseUrl } from "../App";
-const ProductContext = createContext();
-
 const ProductProvide = ({ children }) => {
   const [productData, setProductData] = useState(null);
+  
+  // 1. Safety check for isAuthentified
   const [isAuthentified, setIsAuthentified] = useState(
-    localStorage.getItem("isAuthentified") || false
+    localStorage.getItem("isAuthentified") === "true"
   );
+
   const [cartCout, setCartCount] = useState(0);
   const [favouriteCout, setfavouriteCout] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -17,28 +15,24 @@ const ProductProvide = ({ children }) => {
       const storedValue = localStorage.getItem(item);
 
       // Check if the value is null, undefined, or the string "undefined"
-      if (!storedValue || storedValue === "undefined") {
+      if (!storedValue || storedValue === "undefined" || storedValue === "null") {
         return fallback;
       }
 
-      const result = JSON.parse(storedValue);
-      return result;
+      return JSON.parse(storedValue);
     } catch (error) {
-      console.log("Error parsing localStorage:", error);
+      console.error(`Error parsing localStorage key "${item}":`, error);
       return fallback;
     }
   };
 
-  const [cartItems, setCartItems] = useState(
-    JSON.parse(localStorage.getItem("cartItems")) || []
-  );
+  // ✅ FIX: Use arrow functions inside useState so getLocalData handles the safety check
+  const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
   const [User, setUser] = useState(() => getLocalData("user", {}));
-
+  const [favoriteItem, setfavoriteItem] = useState(() => getLocalData("favourieCart", []));
+  
+  // Token is just a string, so JSON.parse isn't needed here
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-
-  const [favoriteItem, setfavoriteItem] = useState(() =>
-    getLocalData("favourieCart", [])
-  );
 
   useEffect(() => {
     console.log("UserContext:", User);
