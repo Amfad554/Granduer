@@ -100,11 +100,13 @@ const ProductProvide = ({ children }) => {
             },
           });
           const data = await res.json();
+          console.log("Server cart response:", res.status, data);
           if (res.ok) {
             const items = data?.data?.Productcart ?? [];
             setCartItems(items);
             setLocalData("cartItems", items);
           }
+          // ✅ Do NOT wipe cartItems on failure — keep existing localStorage data
         } catch (error) {
           console.error("Failed to fetch server cart:", error);
         }
@@ -158,6 +160,7 @@ const ProductProvide = ({ children }) => {
 
       setLocalData("cartItems", updatedCartItems);
       setCartItems(updatedCartItems);
+      console.log("Updated cart:", updatedCartItems);
     } else {
       try {
         const res = await fetch(`${baseUrl}addcart`, {
@@ -181,6 +184,7 @@ const ProductProvide = ({ children }) => {
           const items = data?.data?.Productcart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
+          console.log("Updated cart (authenticated):", items);
         } else {
           toast.error(data?.message);
         }

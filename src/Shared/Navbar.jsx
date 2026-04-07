@@ -1,3 +1,4 @@
+// Cleaned and properly formatted Navbar component
 import { useContext, useEffect, useState } from "react";
 import { CiMenuFries } from "react-icons/ci";
 import { FaShoppingCart, FaUser, FaTachometerAlt } from "react-icons/fa";
@@ -6,10 +7,8 @@ import { Link, NavLink } from "react-router-dom";
 import { ProductContext } from "../Context/ProductContext";
 
 const Navbar = () => {
-  const { cartCout, isAuthentified, token } = useContext(ProductContext);
-
-// Only treat user as logged in if BOTH isAuthentified is true AND a valid token exists
-const isLoggedIn = isAuthentified && !!token;
+  // ✅ Use isAuthentified from context instead of local isLoggedIn state
+  const { cartCout, isAuthentified } = useContext(ProductContext);
 
   useEffect(() => {
     console.log("cartcount:", cartCout);
@@ -85,10 +84,10 @@ const isLoggedIn = isAuthentified && !!token;
             )}
 
             <NavLink
-              to={isLoggedIn ? "/dashboard" : "/login"}
+              to={isAuthentified ? "/dashboard" : "/login"}
               className="border border-white bg-black p-2 rounded-3xl hover:bg-white hover:text-black transition cursor-pointer"
             >
-              {isLoggedIn ? <FaTachometerAlt /> : <FaUser />}
+              {isAuthentified ? <FaTachometerAlt /> : <FaUser />}
             </NavLink>
 
             <NavLink
@@ -129,15 +128,11 @@ const isLoggedIn = isAuthentified && !!token;
 
           {/* Cart + Search */}
           <div className="flex items-center gap-3">
-            {/* ✅ Mobile cart icon now has badge */}
             <NavLink
               to="/cart"
-              className="border border-white bg-black p-2 rounded-3xl text-sm relative"
+              className="border border-white bg-black p-2 rounded-3xl text-sm"
             >
               <FaShoppingCart />
-              <span className="absolute -top-2 -right-3 h-5 w-5 rounded-full bg-white text-primary flex justify-center items-center font-bold text-xs border border-white">
-                {cartCout || 0}
-              </span>
             </NavLink>
 
             <button
@@ -154,12 +149,11 @@ const isLoggedIn = isAuthentified && !!token;
           </Link>
 
           <div className="flex items-center gap-4">
-            {/* ✅ Uses isLoggedIn (isAuthentified + token) */}
             <Link
-              to={isLoggedIn ? "/dashboard" : "/login"}
+              to={isAuthentified ? "/dashboard" : "/login"}
               className="p-4 text-white text-3xl"
             >
-              {isLoggedIn ? <FaTachometerAlt /> : <FaUser />}
+              {isAuthentified ? <FaTachometerAlt /> : <FaUser />}
             </Link>
 
             <span
