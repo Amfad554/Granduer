@@ -9,7 +9,8 @@ import { baseUrl } from "../App";
 import { toast } from "react-toastify";
 
 const Cart = () => {
-  const { cartItems, cartcout, HandleDeleteCart, token, User } =
+  // ✅ FIX: cartCout (capital C) matches what ProductContext exports
+  const { cartItems, cartCout, HandleDeleteCart, token, User } =
     useContext(ProductContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [prod, setProd] = useState(null);
@@ -61,7 +62,6 @@ const Cart = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Safer check for token
           Authorization: `Bearer ${token || ""}`,
         },
         body: JSON.stringify({ email: User.email }),
@@ -93,14 +93,14 @@ const Cart = () => {
       toast.error("An unexpected error occurred. Please try again.");
     }
   };
+
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 md:px-10 relative">
         {isLoading && (
           <div className="fixed inset-0 z-50 flex justify-center items-center bg-white bg-opacity-75">
             <div className="flex flex-col items-center">
-              <PulseLoader size={12} color="#000" />
-              <p className="text-black mt-2 font-semibold">Logging in...</p>
+              <p className="text-black mt-2 font-semibold">Processing...</p>
             </div>
           </div>
         )}
@@ -110,7 +110,8 @@ const Cart = () => {
             Your Cart
           </h1>
           <p className="text-center text-gray-600 mb-8 text-sm">
-            {cartcout} {cartcout === 1 ? "item" : "items"} in your shopping cart
+            {/* ✅ FIX: cartCout (capital C) */}
+            {cartCout} {cartCout === 1 ? "item" : "items"} in your shopping cart
           </p>
 
           {/* Improved Mobile-Responsive Modal */}
@@ -323,7 +324,8 @@ const Cart = () => {
                     <div className="flex justify-between items-center text-gray-700">
                       <span className="font-medium">Items in Cart:</span>
                       <span className="bg-gray-100 px-4 py-1.5 rounded-lg font-semibold">
-                        {cartcout}
+                        {/* ✅ FIX: cartCout (capital C) */}
+                        {cartCout}
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-gray-700">

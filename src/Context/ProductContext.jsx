@@ -29,9 +29,8 @@ const ProductProvide = ({ children }) => {
     }
   };
 
-  const [cartItems, setCartItems] = useState(
-    JSON.parse(localStorage.getItem("cartItems")) || []
-  );
+  // ✅ FIX: Use getLocalData helper instead of raw JSON.parse
+  const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
   const [User, setUser] = useState(() => getLocalData("user", {}));
 
   const [token, setToken] = useState(localStorage.getItem("token") || "");
@@ -65,7 +64,7 @@ const ProductProvide = ({ children }) => {
 
   const HandleGetProducts = async () => {
     try {
-      const res = await fetch(`${baseUrl}getAllProduct`,{
+      const res = await fetch(`${baseUrl}getAllProduct`, {
         method: "GET",
       });
 
@@ -149,7 +148,6 @@ const ProductProvide = ({ children }) => {
             JSON.stringify(data?.data?.Productcart)
           );
           setCartItems(data?.data?.Productcart);
-          
         } else {
           toast.error(data?.message);
         }
