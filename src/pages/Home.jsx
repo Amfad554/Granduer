@@ -91,14 +91,14 @@ const Home = () => {
           <Swiper
             autoplay={{ delay: 1000, disableOnInteraction: false }}
             spaceBetween={20}
-            loop={true}
+            loop={productData && productData.length >= 5} // only loop if enough slides
             speed={1000}
             slidesPerGroup={1}
             modules={[Autoplay]}
             breakpoints={{
-              640: { slidesPerView: 1 },
-              768: { slidesPerView: 3 },
-              1024: { slidesPerView: 5 },
+              640: { slidesPerView: Math.min(1, productData?.length || 1) },
+              768: { slidesPerView: Math.min(3, productData?.length || 1) },
+              1024: { slidesPerView: Math.min(5, productData?.length || 1) },
             }}
             className="w-full h-72 lg:h-72 xl:h-96 flex flex-col justify-center items-center"
           >
