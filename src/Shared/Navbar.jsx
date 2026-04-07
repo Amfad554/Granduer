@@ -1,4 +1,3 @@
-// Cleaned and properly formatted Navbar component
 import { useContext, useEffect, useState } from "react";
 import { CiMenuFries } from "react-icons/ci";
 import { FaShoppingCart, FaUser, FaTachometerAlt } from "react-icons/fa";
@@ -7,13 +6,12 @@ import { Link, NavLink } from "react-router-dom";
 import { ProductContext } from "../Context/ProductContext";
 
 const Navbar = () => {
-  const {  cartCout } = useContext(ProductContext);
-  useEffect(()=>{
-    console.log("cartcount:",cartCout);
-    
-  },[cartCout])
-  // eslint-disable-next-line no-unused-vars
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { cartCout, isAuthentified } = useContext(ProductContext); // ✅ pull isAuthentified from context
+
+  useEffect(() => {
+    console.log("cartcount:", cartCout);
+  }, [cartCout]);
+
   const [isMenuOpen, setIsmenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -25,8 +23,6 @@ const Navbar = () => {
     { id: 5, name: "Women", path: "/women" },
     { id: 6, name: "Children", path: "/children" },
   ];
-
-
 
   const HandlMenuOpen = () => setIsmenuOpen((prv) => !prv);
 
@@ -85,11 +81,12 @@ const Navbar = () => {
               </div>
             )}
 
+            {/* ✅ Uses isAuthentified from context */}
             <NavLink
-              to={isLoggedIn ? "/dashboard" : "/login"}
+              to={isAuthentified ? "/dashboard" : "/login"}
               className="border border-white bg-black p-2 rounded-3xl hover:bg-white hover:text-black transition cursor-pointer"
             >
-              {isLoggedIn ? <FaTachometerAlt /> : <FaUser />}
+              {isAuthentified ? <FaTachometerAlt /> : <FaUser />}
             </NavLink>
 
             <NavLink
@@ -102,7 +99,7 @@ const Navbar = () => {
             >
               <FaShoppingCart />
               <span className="absolute -top-2 -right-3 h-5 w-5 rounded-full bg-white text-primary flex justify-center items-center font-bold text-xs border border-white">
-                {  cartCout  || 0}
+                {cartCout || 0}
               </span>
             </NavLink>
           </div>
@@ -130,11 +127,15 @@ const Navbar = () => {
 
           {/* Cart + Search */}
           <div className="flex items-center gap-3">
+            {/* ✅ Mobile cart icon now has badge */}
             <NavLink
               to="/cart"
-              className="border border-white bg-black p-2 rounded-3xl text-sm"
+              className="border border-white bg-black p-2 rounded-3xl text-sm relative"
             >
               <FaShoppingCart />
+              <span className="absolute -top-2 -right-3 h-5 w-5 rounded-full bg-white text-primary flex justify-center items-center font-bold text-xs border border-white">
+                {cartCout || 0}
+              </span>
             </NavLink>
 
             <button
@@ -146,16 +147,17 @@ const Navbar = () => {
           </div>
 
           {/* Logo */}
-          <Link to="/" className="font-bold font-serif italic text-2xl"> 
+          <Link to="/" className="font-bold font-serif italic text-2xl">
             Granduer
           </Link>
 
           <div className="flex items-center gap-4">
+            {/* ✅ Uses isAuthentified from context */}
             <Link
-              to={isLoggedIn ? "/dashboard" : "/login"}
+              to={isAuthentified ? "/dashboard" : "/login"}
               className="p-4 text-white text-3xl"
             >
-              {isLoggedIn ? <FaTachometerAlt /> : <FaUser />}
+              {isAuthentified ? <FaTachometerAlt /> : <FaUser />}
             </Link>
 
             <span
@@ -169,11 +171,10 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`${
-            isMenuOpen
+          className={`${isMenuOpen
               ? "max-h-[2000px] opacity-100 block transition duration-500"
               : "max-h-0 opacity-0 hidden transition-all duration-500"
-          } absolute left-0 w-full bg-white text-black`}
+            } absolute left-0 w-full bg-white text-black`}
         >
           <div className="flex flex-col items-center gap-4 p-4">
             {navlinks.map((item) => (

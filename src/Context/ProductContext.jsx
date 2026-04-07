@@ -15,13 +15,13 @@ const getLocalData = (item, fallback) => {
       storedValue === "null" ||
       storedValue.trim() === ""
     ) {
-      localStorage.removeItem(item); // clean up bad value
+      localStorage.removeItem(item);
       return fallback;
     }
     return JSON.parse(storedValue);
   } catch (error) {
     console.error(`Error parsing localStorage key "${item}":`, error);
-    localStorage.removeItem(item); // remove unparseable value
+    localStorage.removeItem(item);
     return fallback;
   }
 };
@@ -50,7 +50,6 @@ const ProductProvide = ({ children }) => {
   const [favouriteCout, setfavouriteCout] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // ✅ All state reads go through getLocalData
   const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
   const [User, setUser] = useState(() => getLocalData("user", {}));
   const [favoriteItem, setfavoriteItem] = useState(() => getLocalData("favourieCart", []));
@@ -102,9 +101,9 @@ const ProductProvide = ({ children }) => {
           });
           const data = await res.json();
           if (res.ok) {
-            const items = data?.data?.Productcart ?? []; // ✅ fallback to []
+            const items = data?.data?.Productcart ?? [];
             setCartItems(items);
-            setLocalData("cartItems", items); // ✅ safe write
+            setLocalData("cartItems", items);
           }
         } catch (error) {
           console.error("Failed to fetch server cart:", error);
@@ -122,7 +121,7 @@ const ProductProvide = ({ children }) => {
       if (res.ok) {
         console.log(data);
         setProductData(data?.data);
-        setLocalData("productData", data); // ✅ safe write
+        setLocalData("productData", data);
       } else {
         console.log(data);
       }
@@ -136,7 +135,8 @@ const ProductProvide = ({ children }) => {
   }, []);
 
   // ─── Add to cart ──────────────────────────────────────────────────────────
-  const HandleAddTCart = async (prod, quantity = null, size = null, color = null) => {
+  // ✅ quantity defaults to 1 instead of null — prevents NaN in cart totals
+  const HandleAddTCart = async (prod, quantity = 1, size = null, color = null) => {
     if (!isAuthentified) {
       let storedCartItems = getLocalData("cartItems", []);
       const existingItem = storedCartItems.find(
@@ -156,7 +156,7 @@ const ProductProvide = ({ children }) => {
         toast.success("Item Added to cart Successfully!");
       }
 
-      setLocalData("cartItems", updatedCartItems); // ✅ safe write
+      setLocalData("cartItems", updatedCartItems);
       setCartItems(updatedCartItems);
     } else {
       try {
@@ -178,7 +178,7 @@ const ProductProvide = ({ children }) => {
         const data = await res.json();
         if (res.ok) {
           toast.success(data?.message);
-          const items = data?.data?.Productcart ?? []; // ✅ fallback to []
+          const items = data?.data?.Productcart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
@@ -209,15 +209,15 @@ const ProductProvide = ({ children }) => {
         const updatedCartItems = storedCartItems.map((item) =>
           parseInt(item?.id) === parseInt(prod?.id)
             ? {
-                ...item,
-                size: prod?.size ?? item?.size,
-                color: prod?.color ?? item?.color,
-                quantity: prod?.quantity ?? item?.quantity,
-              }
+              ...item,
+              size: prod?.size ?? item?.size,
+              color: prod?.color ?? item?.color,
+              quantity: prod?.quantity ?? item?.quantity,
+            }
             : item
         );
 
-        setLocalData("cartItems", updatedCartItems); // ✅ safe write
+        setLocalData("cartItems", updatedCartItems);
         setCartItems(updatedCartItems);
         toast.success("Item Updated Successfully!");
       } else {
@@ -239,7 +239,7 @@ const ProductProvide = ({ children }) => {
         const data = await res.json();
         if (res.ok) {
           toast.success(data?.message);
-          const items = data?.data?.Productcart ?? []; // ✅ fallback to []
+          const items = data?.data?.Productcart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
@@ -261,7 +261,7 @@ const ProductProvide = ({ children }) => {
           (item) => parseInt(item.id) !== parseInt(id)
         );
 
-        setLocalData("cartItems", updatedCartItems); // ✅ safe write
+        setLocalData("cartItems", updatedCartItems);
         setCartItems(updatedCartItems);
         toast.success("Item removed from cart!");
       } else {
@@ -280,7 +280,7 @@ const ProductProvide = ({ children }) => {
         const data = await res.json();
         if (res.ok) {
           toast.success(data?.message);
-          const items = data?.data?.Productcart ?? []; // ✅ fallback to []
+          const items = data?.data?.Productcart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
@@ -312,7 +312,7 @@ const ProductProvide = ({ children }) => {
         toast.success("Item Added to FavouriteCart Successfully!");
       }
 
-      setLocalData("favourieCart", updatedFavouriteCart); // ✅ safe write
+      setLocalData("favourieCart", updatedFavouriteCart);
       setfavoriteItem(updatedFavouriteCart);
     } else {
       console.log("User is authenticated — handle API favourites instead");
@@ -329,6 +329,7 @@ const ProductProvide = ({ children }) => {
         cartCout,
         favoriteItem,
         favouriteCout,
+        isAuthentified,      // ✅ exported so Navbar can consume it
         setIsAuthentified,
         HandleUpdateCart,
         HandleDeleteCart,
