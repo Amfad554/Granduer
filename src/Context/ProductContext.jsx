@@ -89,6 +89,7 @@ const ProductProvide = ({ children }) => {
   }, [favoriteItem]);
 
   // ─── Fetch server cart on login ───────────────────────────────────────────
+  // ─── Fetch server cart on login ───────────────────────────────────────────
   useEffect(() => {
     const fetchUserCart = async () => {
       if (isAuthentified && token && User?.userid) {
@@ -101,12 +102,16 @@ const ProductProvide = ({ children }) => {
           });
           const data = await res.json();
           console.log("Server cart response:", res.status, data);
+
           if (res.ok) {
             const items = data?.data?.Productcart ?? [];
-            setCartItems(items);
-            setLocalData("cartItems", items);
+            // ✅ Only overwrite local cart if server actually has items
+            if (items.length > 0) {
+              setCartItems(items);
+              setLocalData("cartItems", items);
+            }
           }
-          // ✅ Do NOT wipe cartItems on failure — keep existing localStorage data
+          // ✅ On failure, keep existing localStorage cart — do nothing
         } catch (error) {
           console.error("Failed to fetch server cart:", error);
         }
@@ -163,30 +168,35 @@ const ProductProvide = ({ children }) => {
       console.log("Updated cart:", updatedCartItems);
     } else {
       try {
+        const payload = {
+          userid: Number(User?.userid),
+          productid: Number(prod?.id),
+          color,
+          size,
+          quantity,
+        };
+        console.log("🛒 Sending to addcart:", payload); // ← ADD THIS
+
         const res = await fetch(`${baseUrl}addcart`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            userid: Number(User?.userid),
-            productid: Number(prod?.id),
-            color,
-            size,
-            quantity,
-          }),
+          body: JSON.stringify(payload),
         });
 
         const data = await res.json();
+        console.log("🛒 addcart response:", res.status, data); // ← ADD THIS TOO
+
         if (res.ok) {
           toast.success(data?.message);
           const items = data?.data?.Productcart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
-          console.log("Updated cart (authenticated):", items);
         } else {
           toast.error(data?.message);
+          // ✅ Don't touch cartItems — keep existing cart
         }
       } catch (error) {
         console.log("error", error.message);
