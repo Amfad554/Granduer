@@ -4,7 +4,6 @@ import { baseUrl } from "../App";
 
 const ProductContext = createContext();
 
-// ✅ Safe localStorage READ — handles null, "undefined", "null", parse errors
 const getLocalData = (item, fallback) => {
   try {
     const storedValue = localStorage.getItem(item);
@@ -26,7 +25,6 @@ const getLocalData = (item, fallback) => {
   }
 };
 
-// ✅ Safe localStorage WRITE — prevents storing undefined/null as strings
 const setLocalData = (key, value) => {
   try {
     if (value === undefined || value === null) {
@@ -54,13 +52,12 @@ const ProductProvide = ({ children }) => {
   const [User, setUser] = useState(() => getLocalData("user", {}));
   const [favoriteItem, setfavoriteItem] = useState(() => getLocalData("favourieCart", []));
 
-  // Token is a plain string — no JSON.parse needed
   const [token, setToken] = useState(() => {
     const t = localStorage.getItem("token");
     return t && t !== "undefined" && t !== "null" ? t : "";
   });
 
-  // ─── Sync auth state from User ───────────────────────────────────────────
+  // ─── Sync auth state from User ────────────────────────────────────────────
   useEffect(() => {
     console.log("UserContext:", User);
     if (User && User?.role) {
@@ -81,14 +78,12 @@ const ProductProvide = ({ children }) => {
 
   // ─── Favourite count ──────────────────────────────────────────────────────
   useEffect(() => {
-    console.log("favv:", favoriteItem);
     if (favoriteItem && Array.isArray(favoriteItem)) {
       const count = favoriteItem.reduce((acc, curr) => acc + (curr?.quantity || 0), 0);
       setfavouriteCout(count);
     }
   }, [favoriteItem]);
 
-  // ─── Fetch server cart on login ───────────────────────────────────────────
   // ─── Fetch server cart on login ───────────────────────────────────────────
   useEffect(() => {
     const fetchUserCart = async () => {
@@ -104,14 +99,13 @@ const ProductProvide = ({ children }) => {
           console.log("Server cart response:", res.status, data);
 
           if (res.ok) {
-            const items = data?.data?.Productcart ?? [];
-            // ✅ Only overwrite local cart if server actually has items
+            const items = data?.data?.ProductCart ?? []; // ✅ Fixed casing
             if (items.length > 0) {
               setCartItems(items);
               setLocalData("cartItems", items);
             }
           }
-          // ✅ On failure, keep existing localStorage cart — do nothing
+          // ✅ On failure, keep existing localStorage cart
         } catch (error) {
           console.error("Failed to fetch server cart:", error);
         }
@@ -142,7 +136,6 @@ const ProductProvide = ({ children }) => {
   }, []);
 
   // ─── Add to cart ──────────────────────────────────────────────────────────
-  // ✅ quantity defaults to 1 instead of null — prevents NaN in cart totals
   const HandleAddTCart = async (prod, quantity = 1, size = null, color = null) => {
     if (!isAuthentified) {
       let storedCartItems = getLocalData("cartItems", []);
@@ -165,7 +158,6 @@ const ProductProvide = ({ children }) => {
 
       setLocalData("cartItems", updatedCartItems);
       setCartItems(updatedCartItems);
-      console.log("Updated cart:", updatedCartItems);
     } else {
       try {
         const payload = {
@@ -175,7 +167,6 @@ const ProductProvide = ({ children }) => {
           size,
           quantity,
         };
-        console.log("🛒 Sending to addcart:", payload); // ← ADD THIS
 
         const res = await fetch(`${baseUrl}addcart`, {
           method: "POST",
@@ -187,16 +178,14 @@ const ProductProvide = ({ children }) => {
         });
 
         const data = await res.json();
-        console.log("🛒 addcart response:", res.status, data); // ← ADD THIS TOO
-
         if (res.ok) {
           toast.success(data?.message);
-          const items = data?.data?.Productcart ?? [];
+          const items = data?.data?.ProductCart ?? []; // ✅ Fixed casing
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
           toast.error(data?.message);
-          // ✅ Don't touch cartItems — keep existing cart
+          // ✅ Don't touch cartItems on failure
         }
       } catch (error) {
         console.log("error", error.message);
@@ -207,7 +196,6 @@ const ProductProvide = ({ children }) => {
 
   // ─── Update cart ──────────────────────────────────────────────────────────
   const HandleUpdateCart = async (prod) => {
-    console.log("prodii:", prod);
     try {
       if (!isAuthentified) {
         const storedCartItems = getLocalData("cartItems", []);
@@ -252,14 +240,11 @@ const ProductProvide = ({ children }) => {
 
         const data = await res.json();
         if (res.ok) {
-          console.log("🛒 Full response data:", JSON.stringify(data, null, 2)); // ← ADD THIS
           toast.success(data?.message);
-          const items = data?.data?.Productcart ?? [];
-          console.log("🛒 Parsed items:", items); // ← AND THIS
+          const items = data?.data?.ProductCart ?? []; // ✅ Fixed casing
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
-          console.log("🛒 Error response data:", JSON.stringify(data, null, 2)); // ← ADD THIS
           toast.error(data?.message);
         }
       }
@@ -297,7 +282,7 @@ const ProductProvide = ({ children }) => {
         const data = await res.json();
         if (res.ok) {
           toast.success(data?.message);
-          const items = data?.data?.Productcart ?? [];
+          const items = data?.data?.ProductCart ?? []; // ✅ Fixed casing
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
@@ -312,8 +297,6 @@ const ProductProvide = ({ children }) => {
 
   // ─── Add to favourites ────────────────────────────────────────────────────
   const HandleAddFavouritrCart = (prod) => {
-    console.log("prod", prod);
-
     if (!isAuthentified) {
       let storedFavouriteCart = getLocalData("favourieCart", []);
       const existingItem = storedFavouriteCart?.find(
@@ -346,7 +329,7 @@ const ProductProvide = ({ children }) => {
         cartCout,
         favoriteItem,
         favouriteCout,
-        isAuthentified,      // ✅ exported so Navbar can consume it
+        isAuthentified,
         setIsAuthentified,
         HandleUpdateCart,
         HandleDeleteCart,
