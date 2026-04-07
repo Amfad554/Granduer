@@ -48,39 +48,55 @@ const Cart = () => {
 
   const HandleInitializePayment = async (e) => {
     e.preventDefault();
+
+    // Check if User exists before even trying to fetch
+    if (!User?.email) {
+      toast.error("Please login to proceed with payment");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await fetch(`${baseUrl}initializePayment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token && token}`,
+          // Safer check for token
+          Authorization: `Bearer ${token || ""}`,
         },
-        body: JSON.stringify({ email: User && User?.email }),
+        body: JSON.stringify({ email: User.email }),
       });
+
+      // Check if the response content-type is actually JSON
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server returned a non-JSON response. Check your backend routes.");
+      }
+
       const data = await res.json();
 
       if (res.ok) {
-        console.log(data);
         setIsLoading(false);
-        setTimeout(() => {
-          toast.success(data.message);
-        }, 3000);
-        window.location.href = data?.link;
+        // If payment provider gives a link, redirect
+        if (data?.link) {
+          window.location.href = data.link;
+        } else {
+          toast.success(data.message || "Payment initialized");
+        }
       } else {
-        console.log(data);
         setIsLoading(false);
-        toast.error(data.message);
+        toast.error(data.message || "Failed to initialize payment");
       }
     } catch (error) {
-      console.log("error:", error);
+      console.error("Payment Error:", error);
+      setIsLoading(false);
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
-
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 md:px-10 relative">
-         {isLoading && (
+        {isLoading && (
           <div className="fixed inset-0 z-50 flex justify-center items-center bg-white bg-opacity-75">
             <div className="flex flex-col items-center">
               <PulseLoader size={12} color="#000" />
@@ -99,9 +115,8 @@ const Cart = () => {
 
           {/* Improved Mobile-Responsive Modal */}
           <div
-            className={`${
-              isModalOpen ? "" : "hidden"
-            } fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300`}
+            className={`${isModalOpen ? "" : "hidden"
+              } fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300`}
             onClick={() => setIsModalOpen(false)}
           >
             <div
@@ -320,7 +335,7 @@ const Cart = () => {
                             (sum, item) =>
                               sum +
                               (item.price || item?.product?.price) *
-                                item.quantity,
+                              item.quantity,
                             0
                           )
                           .toFixed(2)}
@@ -340,7 +355,7 @@ const Cart = () => {
                             (sum, item) =>
                               sum +
                               (item.price || item?.product?.price) *
-                                item.quantity,
+                              item.quantity,
                             0
                           )
                           .toFixed(2)}
@@ -348,11 +363,11 @@ const Cart = () => {
                     </div>
                   </div>
 
-                  <button 
-                  onClick ={(e) => {
-                    HandleInitializePayment(e);
-                  }}
-                  className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
+                  <button
+                    onClick={(e) => {
+                      HandleInitializePayment(e);
+                    }}
+                    className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
                     Proceed to Checkout
                   </button>
                 </div>
