@@ -2,16 +2,15 @@ import React, { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout/Layout";
 import { RiDeleteBin3Fill, RiEditCircleFill } from "react-icons/ri";
-import { Link } from "react-router-dom";
 import { ImCancelCircle } from "react-icons/im";
 import Edit from "../Context/Edit";
 import { baseUrl } from "../App";
 import { toast } from "react-toastify";
 
 const Cart = () => {
-  // ✅ FIX: cartCout (capital C) matches what ProductContext exports
   const { cartItems, cartCout, HandleDeleteCart, token, User } =
     useContext(ProductContext);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [prod, setProd] = useState(null);
   const [selectedSize, setSetectedSize] = useState("");
@@ -24,33 +23,30 @@ const Cart = () => {
   }, [prod]);
 
   useEffect(() => {
-    if (selectedSize) {
-      setProd((prv) => ({ ...prv, size: selectedSize }));
-    }
-    if (selectedColor) {
-      setProd((prv) => ({ ...prv, color: selectedColor }));
-    }
-    if (quantity) {
-      setProd((prv) => ({ ...prv, quantity: quantity }));
-    }
+    if (selectedSize) setProd((prv) => ({ ...prv, size: selectedSize }));
+    if (selectedColor) setProd((prv) => ({ ...prv, color: selectedColor }));
+    if (quantity) setProd((prv) => ({ ...prv, quantity: quantity }));
   }, [selectedColor, selectedSize, quantity]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
+    document.body.style.overflow = isModalOpen ? "hidden" : "unset";
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [isModalOpen]);
 
+  // ✅ Helper: safely get price from item (handles both local + API structures)
+  const getPrice = (item) => Number(item?.price || item?.product?.price || 0);
+  const getQty = (item) => Number(item?.quantity || 0);
+
+  // ✅ Helper: compute cart total
+  const cartTotal = (items) =>
+    items.reduce((sum, item) => sum + getPrice(item) * getQty(item), 0).toFixed(2);
+
   const HandleInitializePayment = async (e) => {
     e.preventDefault();
 
-    // Check if User exists before even trying to fetch
     if (!User?.email) {
       toast.error("Please login to proceed with payment");
       return;
@@ -67,7 +63,6 @@ const Cart = () => {
         body: JSON.stringify({ email: User.email }),
       });
 
-      // Check if the response content-type is actually JSON
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         throw new Error("Server returned a non-JSON response. Check your backend routes.");
@@ -77,7 +72,6 @@ const Cart = () => {
 
       if (res.ok) {
         setIsLoading(false);
-        // If payment provider gives a link, redirect
         if (data?.link) {
           window.location.href = data.link;
         } else {
@@ -110,11 +104,10 @@ const Cart = () => {
             Your Cart
           </h1>
           <p className="text-center text-gray-600 mb-8 text-sm">
-            {/* ✅ FIX: cartCout (capital C) */}
             {cartCout} {cartCout === 1 ? "item" : "items"} in your shopping cart
           </p>
 
-          {/* Improved Mobile-Responsive Modal */}
+          {/* Modal */}
           <div
             className={`${isModalOpen ? "" : "hidden"
               } fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300`}
@@ -124,7 +117,6 @@ const Cart = () => {
               className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-300"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close Button - Sticky on mobile */}
               <div className="sticky top-0 right-0 z-10 flex justify-end p-3 bg-white/95 backdrop-blur-sm border-b border-gray-100">
                 <button
                   onClick={() => setIsModalOpen(false)}
@@ -133,8 +125,6 @@ const Cart = () => {
                   <ImCancelCircle className="h-6 w-6" />
                 </button>
               </div>
-
-              {/* Modal Content with proper padding */}
               <div className="p-4 sm:p-6">
                 <Edit
                   prod={prod}
@@ -154,29 +144,16 @@ const Cart = () => {
                 <table className="min-w-full">
                   <thead className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-200">
                     <tr className="text-left text-gray-700">
-                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">
-                        Product
-                      </th>
-                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">
-                        Quantity
-                      </th>
-                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">
-                        Total
-                      </th>
-                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider text-center">
-                        Actions
-                      </th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">Product</th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">Price</th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">Quantity</th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider">Total</th>
+                      <th className="py-4 px-5 font-semibold text-xs uppercase tracking-wider text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {cartItems.map((item, index) => (
-                      <tr
-                        key={index}
-                        className="hover:bg-gray-50 transition-all duration-200 group"
-                      >
+                      <tr key={index} className="hover:bg-gray-50 transition-all duration-200 group">
                         <td className="py-4 px-5">
                           <div className="flex items-center gap-3">
                             <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-md group-hover:shadow-lg transition-shadow duration-200 flex-shrink-0">
@@ -192,7 +169,7 @@ const Cart = () => {
                           </div>
                         </td>
                         <td className="py-4 px-5 text-gray-700 font-medium">
-                          ${item?.price || item?.product?.price}
+                          ${getPrice(item)}
                         </td>
                         <td className="py-4 px-5">
                           <span className="inline-flex items-center justify-center bg-gray-100 text-gray-800 font-semibold px-3 py-1.5 rounded-lg min-w-[50px] text-sm">
@@ -200,17 +177,12 @@ const Cart = () => {
                           </span>
                         </td>
                         <td className="py-4 px-5 font-bold text-gray-900">
-                          $
-                          {(
-                            (item?.price || item?.product?.price) *
-                            item?.quantity
-                          ).toFixed(2)}
+                          ${(getPrice(item) * getQty(item)).toFixed(2)}
                         </td>
                         <td className="py-4 px-5">
                           <div className="flex justify-center gap-2">
                             <button
                               onClick={() => {
-                                console.log("item:", item);
                                 setIsModalOpen(true);
                                 setProd(item);
                               }}
@@ -257,30 +229,22 @@ const Cart = () => {
                           {item.name || item?.product?.name}
                         </h3>
                         <p className="text-gray-600 font-semibold text-lg">
-                          ${item.price || item?.product?.price}
+                          ${getPrice(item)}
                         </p>
                       </div>
                     </div>
 
                     <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-2">
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600 font-medium">
-                          Quantity:
-                        </span>
+                        <span className="text-gray-600 font-medium">Quantity:</span>
                         <span className="bg-white px-4 py-1.5 rounded-lg font-semibold text-gray-800 border border-gray-200">
                           {item.quantity}
                         </span>
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                        <span className="text-gray-700 font-semibold">
-                          Total:
-                        </span>
+                        <span className="text-gray-700 font-semibold">Total:</span>
                         <span className="font-bold text-xl text-gray-900">
-                          $
-                          {(
-                            (item?.price || item?.product?.price) *
-                            item?.quantity
-                          ).toFixed(2)}
+                          ${(getPrice(item) * getQty(item)).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -288,7 +252,6 @@ const Cart = () => {
                     <div className="flex gap-3">
                       <button
                         onClick={() => {
-                          console.log("item:", item);
                           setIsModalOpen(true);
                           setProd(item);
                         }}
@@ -301,7 +264,6 @@ const Cart = () => {
                         onClick={(e) => {
                           e.preventDefault();
                           HandleDeleteCart(item?.id || item?.productid);
-                          console.log("item:", item);
                         }}
                         className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200"
                       >
@@ -313,7 +275,7 @@ const Cart = () => {
                 ))}
               </div>
 
-              {/* Cart Summary */}
+              {/* Order Summary */}
               <div className="flex justify-end">
                 <div className="bg-white p-8 rounded-2xl w-full sm:w-2/3 md:w-1/2 lg:w-1/3 shadow-xl border border-gray-200">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-200">
@@ -330,42 +292,25 @@ const Cart = () => {
                     <div className="flex justify-between items-center text-gray-700">
                       <span className="font-medium">Subtotal:</span>
                       <span className="font-semibold text-lg">
-                        $
-                        {cartItems
-                          .reduce((sum, item) => {
-                            // ✅ Handle both local (item.price) and API (item.product.price) structures
-                            const price = item?.price || item?.product?.price || 0;
-                            const qty = item?.quantity || 0;
-                            return sum + (Number(price) * Number(qty));
-                          }, 0)
-                          .toFixed(2)}
+                        ${cartTotal(cartItems)}
                       </span>
                     </div>
                   </div>
 
                   <div className="pt-4 border-t-2 border-gray-200 mb-6">
                     <div className="flex justify-between items-center">
-                      <span className="text-xl font-bold text-gray-900">
-                        Total:
-                      </span>
+                      <span className="text-xl font-bold text-gray-900">Total:</span>
                       <span className="text-2xl font-bold text-gray-900">
-                        $
-                        {cartItems
-                          .reduce((sum, item) => {
-                            const price = item?.price || item?.product?.price || 0;
-                            const qty = item?.quantity || 0;
-                            return sum + (Number(price) * Number(qty));
-                          }, 0)
-                          .toFixed(2)}
+                        ${cartTotal(cartItems)}
                       </span>
                     </div>
                   </div>
 
                   <button
-                    onClick={(e) => HandleInitializePayment(e)}
+                    onClick={HandleInitializePayment}
                     disabled={isLoading || cartItems.length === 0}
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 transform 
-        ${isLoading || cartItems.length === 0
+                      ${isLoading || cartItems.length === 0
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-black text-white hover:bg-gray-800 hover:shadow-2xl hover:scale-[1.02]"
                       }`}
@@ -378,9 +323,7 @@ const Cart = () => {
           ) : (
             <div className="flex flex-col items-center justify-center mt-20 bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto border border-gray-200">
               <div className="text-6xl mb-6">🛒</div>
-              <p className="text-2xl font-semibold text-gray-800 mb-2">
-                Your cart is empty
-              </p>
+              <p className="text-2xl font-semibold text-gray-800 mb-2">Your cart is empty</p>
               <p className="text-gray-600 mb-8 text-center">
                 Looks like you haven't added any items yet
               </p>

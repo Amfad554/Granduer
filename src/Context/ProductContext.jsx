@@ -1,7 +1,47 @@
+import React, { createContext, useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { baseUrl } from "../App";
+
+const ProductContext = createContext();
+
+// ✅ Safe localStorage READ — handles null, "undefined", "null", parse errors
+const getLocalData = (item, fallback) => {
+  try {
+    const storedValue = localStorage.getItem(item);
+    if (
+      storedValue === null ||
+      storedValue === undefined ||
+      storedValue === "undefined" ||
+      storedValue === "null" ||
+      storedValue.trim() === ""
+    ) {
+      localStorage.removeItem(item); // clean up bad value
+      return fallback;
+    }
+    return JSON.parse(storedValue);
+  } catch (error) {
+    console.error(`Error parsing localStorage key "${item}":`, error);
+    localStorage.removeItem(item); // remove unparseable value
+    return fallback;
+  }
+};
+
+// ✅ Safe localStorage WRITE — prevents storing undefined/null as strings
+const setLocalData = (key, value) => {
+  try {
+    if (value === undefined || value === null) {
+      localStorage.removeItem(key);
+      return;
+    }
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Error saving localStorage key "${key}":`, error);
+  }
+};
+
 const ProductProvide = ({ children }) => {
   const [productData, setProductData] = useState(null);
-  
-  // 1. Safety check for isAuthentified
+
   const [isAuthentified, setIsAuthentified] = useState(
     localStorage.getItem("isAuthentified") === "true"
   );
@@ -10,30 +50,18 @@ const ProductProvide = ({ children }) => {
   const [favouriteCout, setfavouriteCout] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const getLocalData = (item, fallback) => {
-    try {
-      const storedValue = localStorage.getItem(item);
-
-      // Check if the value is null, undefined, or the string "undefined"
-      if (!storedValue || storedValue === "undefined" || storedValue === "null") {
-        return fallback;
-      }
-
-      return JSON.parse(storedValue);
-    } catch (error) {
-      console.error(`Error parsing localStorage key "${item}":`, error);
-      return fallback;
-    }
-  };
-
-  // ✅ FIX: Use arrow functions inside useState so getLocalData handles the safety check
+  // ✅ All state reads go through getLocalData
   const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
   const [User, setUser] = useState(() => getLocalData("user", {}));
   const [favoriteItem, setfavoriteItem] = useState(() => getLocalData("favourieCart", []));
-  
-  // Token is just a string, so JSON.parse isn't needed here
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
 
+  // Token is a plain string — no JSON.parse needed
+  const [token, setToken] = useState(() => {
+    const t = localStorage.getItem("token");
+    return t && t !== "undefined" && t !== "null" ? t : "";
+  });
+
+  // ─── Sync auth state from User ───────────────────────────────────────────
   useEffect(() => {
     console.log("UserContext:", User);
     if (User && User?.role) {
@@ -41,10 +69,10 @@ const ProductProvide = ({ children }) => {
     }
   }, [User]);
 
+  // ─── Cart count ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (cartItems && Array.isArray(cartItems)) {
       const count = cartItems.reduce((acc, curr) => {
-        // Use the same safety logic here!
         const qty = curr?.quantity || 0;
         return acc + Number(qty);
       }, 0);
@@ -52,52 +80,49 @@ const ProductProvide = ({ children }) => {
     }
   }, [cartItems]);
 
+  // ─── Favourite count ──────────────────────────────────────────────────────
   useEffect(() => {
     console.log("favv:", favoriteItem);
-    if (favoriteItem) {
-      const count = favoriteItem.reduce((acc, curr) => acc + curr?.quantity, 0);
+    if (favoriteItem && Array.isArray(favoriteItem)) {
+      const count = favoriteItem.reduce((acc, curr) => acc + (curr?.quantity || 0), 0);
       setfavouriteCout(count);
     }
   }, [favoriteItem]);
-// Add this inside ProductProvide in ProductContext.js
-useEffect(() => {
-  const fetchUserCart = async () => {
-    // Only fetch if we are authenticated and have a token/userID
-    if (isAuthentified && token && User?.userid) {
-      try {
-        const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await res.json();
-        if (res.ok) {
-          const items = data?.data?.Productcart || [];
-          setCartItems(items);
-          localStorage.setItem("cartItems", JSON.stringify(items));
+
+  // ─── Fetch server cart on login ───────────────────────────────────────────
+  useEffect(() => {
+    const fetchUserCart = async () => {
+      if (isAuthentified && token && User?.userid) {
+        try {
+          const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const data = await res.json();
+          if (res.ok) {
+            const items = data?.data?.Productcart ?? []; // ✅ fallback to []
+            setCartItems(items);
+            setLocalData("cartItems", items); // ✅ safe write
+          }
+        } catch (error) {
+          console.error("Failed to fetch server cart:", error);
         }
-      } catch (error) {
-        console.error("Failed to fetch server cart:", error);
       }
-    }
-  };
+    };
+    fetchUserCart();
+  }, [isAuthentified, token, User?.userid]);
 
-  fetchUserCart();
-}, [isAuthentified, token, User?.userid]); // Runs when login status or user changes
-
+  // ─── Get all products ─────────────────────────────────────────────────────
   const HandleGetProducts = async () => {
     try {
-      const res = await fetch(`${baseUrl}getAllProduct`, {
-        method: "GET",
-      });
-
+      const res = await fetch(`${baseUrl}getAllProduct`, { method: "GET" });
       const data = await res.json();
-
       if (res.ok) {
         console.log(data);
         setProductData(data?.data);
-        localStorage.setItem("productData", JSON.stringify(data));
+        setLocalData("productData", data); // ✅ safe write
       } else {
         console.log(data);
       }
@@ -110,15 +135,10 @@ useEffect(() => {
     HandleGetProducts();
   }, []);
 
-  const HandleAddTCart = async (
-    prod,
-    quantity = null,
-    size = null,
-    color = null
-  ) => {
+  // ─── Add to cart ──────────────────────────────────────────────────────────
+  const HandleAddTCart = async (prod, quantity = null, size = null, color = null) => {
     if (!isAuthentified) {
       let storedCartItems = getLocalData("cartItems", []);
-
       const existingItem = storedCartItems.find(
         (item) => parseInt(item.id) === parseInt(prod.id)
       );
@@ -130,33 +150,24 @@ useEffect(() => {
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
-        toast.info("Existing item quantity added to cart Succesfully!");
+        toast.info("Existing item quantity added to cart Successfully!");
       } else {
-        updatedCartItems = [
-          ...storedCartItems,
-          { ...prod, quantity, size, color },
-        ];
-        toast.success("Item Added to cart Succesfully!");
+        updatedCartItems = [...storedCartItems, { ...prod, quantity, size, color }];
+        toast.success("Item Added to cart Successfully!");
       }
 
-      localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+      setLocalData("cartItems", updatedCartItems); // ✅ safe write
       setCartItems(updatedCartItems);
-      console.log("Updated Cart:", updatedCartItems);
     } else {
       try {
-        console.log("User is authenticated — handle API cart instead");
-
-        console.log("tok", token && token);
-        console.log("uId", Number(User && User?.userid));
-
         const res = await fetch(`${baseUrl}addcart`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token && token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            userid: Number(User && User?.userid),
+            userid: Number(User?.userid),
             productid: Number(prod?.id),
             color,
             size,
@@ -167,30 +178,25 @@ useEffect(() => {
         const data = await res.json();
         if (res.ok) {
           toast.success(data?.message);
-          localStorage.setItem(
-            "cartItems",
-            JSON.stringify(data?.data?.Productcart)
-          );
-          setCartItems(data?.data?.Productcart);
-
+          const items = data?.data?.Productcart ?? []; // ✅ fallback to []
+          setLocalData("cartItems", items);
+          setCartItems(items);
         } else {
           toast.error(data?.message);
         }
-        console.log("addCartRes:", data);
       } catch (error) {
         console.log("error", error.message);
-        toast.success("unable to add to cart, please try again later!");
+        toast.error("Unable to add to cart, please try again later!");
       }
     }
   };
 
+  // ─── Update cart ──────────────────────────────────────────────────────────
   const HandleUpdateCart = async (prod) => {
     console.log("prodii:", prod);
-
     try {
       if (!isAuthentified) {
         const storedCartItems = getLocalData("cartItems", []);
-
         const existingItem = storedCartItems.find(
           (item) => parseInt(item?.id) === parseInt(prod?.id)
         );
@@ -203,33 +209,26 @@ useEffect(() => {
         const updatedCartItems = storedCartItems.map((item) =>
           parseInt(item?.id) === parseInt(prod?.id)
             ? {
-              ...item,
-              size: prod?.size ?? item?.size,
-              color: prod?.color ?? item?.color,
-              quantity: prod?.quantity ?? item?.quantity,
-            }
+                ...item,
+                size: prod?.size ?? item?.size,
+                color: prod?.color ?? item?.color,
+                quantity: prod?.quantity ?? item?.quantity,
+              }
             : item
         );
 
-        localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+        setLocalData("cartItems", updatedCartItems); // ✅ safe write
         setCartItems(updatedCartItems);
-
         toast.success("Item Updated Successfully!");
-        console.log("Updated Cart:", updatedCartItems);
       } else {
-        console.log("Update....");
-
-        console.log("tok", token && token);
-        console.log("uId", Number(User && User?.userid));
-
         const res = await fetch(`${baseUrl}updatecart`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: ` Bearer ${token && token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            userid: Number(User && User?.userid),
+            userid: Number(User?.userid),
             productid: Number(prod?.product?.id || prod?.productid),
             color: prod?.color,
             size: prod?.size,
@@ -240,22 +239,20 @@ useEffect(() => {
         const data = await res.json();
         if (res.ok) {
           toast.success(data?.message);
-          localStorage.setItem(
-            "cartItems",
-            JSON.stringify(data?.data?.Productcart)
-          );
-          setCartItems(data?.data?.Productcart);
+          const items = data?.data?.Productcart ?? []; // ✅ fallback to []
+          setLocalData("cartItems", items);
+          setCartItems(items);
         } else {
           toast.error(data?.message);
         }
-        console.log("addCartRes:", data);
       }
     } catch (error) {
       console.log(error.message);
-      toast.error("unable to update cart, please try again later!");
+      toast.error("Unable to update cart, please try again later!");
     }
   };
 
+  // ─── Delete from cart ─────────────────────────────────────────────────────
   const HandleDeleteCart = async (id) => {
     try {
       if (!isAuthentified) {
@@ -264,23 +261,18 @@ useEffect(() => {
           (item) => parseInt(item.id) !== parseInt(id)
         );
 
-        console.log("updatedCartItems", updatedCartItems);
-
-        localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+        setLocalData("cartItems", updatedCartItems); // ✅ safe write
         setCartItems(updatedCartItems);
         toast.success("Item removed from cart!");
       } else {
-        console.log("tok", token && token);
-        console.log("uId", Number(User && User?.userid));
-
         const res = await fetch(`${baseUrl}deletecart`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: ` Bearer ${token && token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            userid: Number(User && User?.userid),
+            userid: Number(User?.userid),
             productid: Number(id),
           }),
         });
@@ -288,28 +280,25 @@ useEffect(() => {
         const data = await res.json();
         if (res.ok) {
           toast.success(data?.message);
-          localStorage.setItem(
-            "cartItems",
-            JSON.stringify(data?.data?.Productcart)
-          );
-          setCartItems(data?.data?.Productcart);
+          const items = data?.data?.Productcart ?? []; // ✅ fallback to []
+          setLocalData("cartItems", items);
+          setCartItems(items);
         } else {
           toast.error(data?.message);
         }
-        console.log("addCartRes:", data);
       }
     } catch (error) {
       console.log("error", error.message);
-      toast.error("unable to delete cart, please try again later!");
+      toast.error("Unable to delete cart, please try again later!");
     }
   };
 
+  // ─── Add to favourites ────────────────────────────────────────────────────
   const HandleAddFavouritrCart = (prod) => {
     console.log("prod", prod);
 
     if (!isAuthentified) {
       let storedFavouriteCart = getLocalData("favourieCart", []);
-
       const existingItem = storedFavouriteCart?.find(
         (item) => parseInt(item?.id) === parseInt(prod?.id)
       );
@@ -319,22 +308,14 @@ useEffect(() => {
         toast.info("Item already in FavouriteCart");
         updatedFavouriteCart = storedFavouriteCart;
       } else {
-        console.log("exist", existingItem);
-        updatedFavouriteCart = [
-          ...storedFavouriteCart,
-          { ...prod, quantity: 1 },
-        ];
-        toast.success("Item Added to FavouriteCart Succesfully!");
+        updatedFavouriteCart = [...storedFavouriteCart, { ...prod, quantity: 1 }];
+        toast.success("Item Added to FavouriteCart Successfully!");
       }
 
-      localStorage.setItem(
-        "favourieCart",
-        JSON.stringify(updatedFavouriteCart)
-      );
+      setLocalData("favourieCart", updatedFavouriteCart); // ✅ safe write
       setfavoriteItem(updatedFavouriteCart);
-      console.log("Updated favCart:", updatedFavouriteCart);
     } else {
-      console.log("User is authenticated — handle API cart instead");
+      console.log("User is authenticated — handle API favourites instead");
     }
   };
 
