@@ -189,8 +189,8 @@ const UserLoginPage = () => {
     try {
       if (!isLogin && !isReset) {
         const formData = new FormData();
-        formData.append("firstname", inputs.firstname);
-        formData.append("lastname", inputs.lastname);
+        formData.append("name", `${inputs.firstname} ${inputs.lastname}`.trim());
+
         formData.append("email", inputs.email);
         formData.append("phone", inputs.phone);
         formData.append("address", inputs.address);
@@ -270,11 +270,10 @@ const UserLoginPage = () => {
 
                   resetInputs();
                 }}
-                className={`w-1/2 py-4 font-semibold transition-all ${
-                  isLogin
+                className={`w-1/2 py-4 font-semibold transition-all ${isLogin
                     ? "bg-black text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 Login
               </button>
@@ -283,11 +282,10 @@ const UserLoginPage = () => {
                   setIsLogin(false);
                   resetInputs();
                 }}
-                className={`w-1/2 py-4 font-semibold transition-all ${
-                  !isLogin
+                className={`w-1/2 py-4 font-semibold transition-all ${!isLogin
                     ? "bg-black text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 Sign Up
               </button>
@@ -383,9 +381,8 @@ const UserLoginPage = () => {
                 value={inputs.firstname}
                 onChange={handleInputChange}
                 placeholder="First Name"
-                className={`w-full p-3 rounded-lg border-2 ${
-                  errors.firstname ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-3 rounded-lg border-2 ${errors.firstname ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.firstname && (
                 <span className="text-red-500 text-sm">{errors.firstname}</span>
@@ -397,9 +394,8 @@ const UserLoginPage = () => {
                 value={inputs.lastname}
                 onChange={handleInputChange}
                 placeholder="Last Name"
-                className={`w-full p-3 rounded-lg border-2 ${
-                  errors.lastname ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-3 rounded-lg border-2 ${errors.lastname ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.lastname && (
                 <span className="text-red-500 text-sm">{errors.lastname}</span>
@@ -411,9 +407,8 @@ const UserLoginPage = () => {
                 value={inputs.phone}
                 onChange={handleInputChange}
                 placeholder="Phone Number"
-                className={`w-full p-3 rounded-lg border-2 ${
-                  errors.phone ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-3 rounded-lg border-2 ${errors.phone ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.phone && (
                 <span className="text-red-500 text-sm">{errors.phone}</span>
@@ -425,9 +420,8 @@ const UserLoginPage = () => {
                 value={inputs.email}
                 onChange={handleInputChange}
                 placeholder="Email Address"
-                className={`w-full p-3 rounded-lg border-2 ${
-                  errors.email ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-3 rounded-lg border-2 ${errors.email ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.email && (
                 <span className="text-red-500 text-sm">{errors.email}</span>
@@ -439,9 +433,8 @@ const UserLoginPage = () => {
                 value={inputs.address}
                 onChange={handleInputChange}
                 placeholder="Address"
-                className={`w-full p-3 rounded-lg border-2 ${
-                  errors.address ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-3 rounded-lg border-2 ${errors.address ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.address && (
                 <span className="text-red-500 text-sm">{errors.address}</span>
@@ -454,9 +447,8 @@ const UserLoginPage = () => {
                   value={inputs.password}
                   onChange={handleInputChange}
                   placeholder="Password"
-                  className={`w-full p-3 rounded-lg border-2 ${
-                    errors.password ? "border-red-500" : "border-gray-300"
-                  }`}
+                  className={`w-full p-3 rounded-lg border-2 ${errors.password ? "border-red-500" : "border-gray-300"
+                    }`}
                 />
                 <button
                   type="button"
@@ -477,11 +469,10 @@ const UserLoginPage = () => {
                   value={inputs.confirmpassword}
                   onChange={handleInputChange}
                   placeholder="Confirm Password"
-                  className={`w-full p-3 rounded-lg border-2 ${
-                    errors.confirmpassword
+                  className={`w-full p-3 rounded-lg border-2 ${errors.confirmpassword
                       ? "border-red-500"
                       : "border-gray-300"
-                  }`}
+                    }`}
                 />
                 <button
                   type="button"
