@@ -252,11 +252,14 @@ const ProductProvide = ({ children }) => {
 
         const data = await res.json();
         if (res.ok) {
+          console.log("🛒 Full response data:", JSON.stringify(data, null, 2)); // ← ADD THIS
           toast.success(data?.message);
           const items = data?.data?.Productcart ?? [];
+          console.log("🛒 Parsed items:", items); // ← AND THIS
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
+          console.log("🛒 Error response data:", JSON.stringify(data, null, 2)); // ← ADD THIS
           toast.error(data?.message);
         }
       }
