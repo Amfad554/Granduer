@@ -19,39 +19,31 @@ const Cart = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    console.log("prod:", prod);
-  }, [prod]);
-
-  useEffect(() => {
     if (selectedSize) setProd((prv) => ({ ...prv, size: selectedSize }));
     if (selectedColor) setProd((prv) => ({ ...prv, color: selectedColor }));
     if (quantity) setProd((prv) => ({ ...prv, quantity: quantity }));
   }, [selectedColor, selectedSize, quantity]);
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     document.body.style.overflow = isModalOpen ? "hidden" : "unset";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    return () => { document.body.style.overflow = "unset"; };
   }, [isModalOpen]);
 
-  // ✅ Helper: safely get price from item (handles both local + API structures)
-  const getPrice = (item) => Number(item?.price || item?.product?.price || 0);
+  // ✅ Helpers — handle both local (flat) and server (nested under Product) structures
+  const getPrice = (item) => Number(item?.price || item?.Product?.price || 0);
   const getQty = (item) => Number(item?.quantity || 0);
+  const getName = (item) => item?.name || item?.Product?.name;
+  const getImage = (item) => item?.image || item?.Product?.image;
 
-  // ✅ Helper: compute cart total
   const cartTotal = (items) =>
     items.reduce((sum, item) => sum + getPrice(item) * getQty(item), 0).toFixed(2);
 
   const HandleInitializePayment = async (e) => {
     e.preventDefault();
-
     if (!User?.email) {
       toast.error("Please login to proceed with payment");
       return;
     }
-
     setIsLoading(true);
     try {
       const res = await fetch(`${baseUrl}initializePayment`, {
@@ -65,11 +57,10 @@ const Cart = () => {
 
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Server returned a non-JSON response. Check your backend routes.");
+        throw new Error("Server returned a non-JSON response.");
       }
 
       const data = await res.json();
-
       if (res.ok) {
         setIsLoading(false);
         if (data?.link) {
@@ -109,18 +100,17 @@ const Cart = () => {
 
           {/* Modal */}
           <div
-            className={`${isModalOpen ? "" : "hidden"
-              } fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300`}
+            className={`${isModalOpen ? "" : "hidden"} fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm`}
             onClick={() => setIsModalOpen(false)}
           >
             <div
-              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-300"
+              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="sticky top-0 right-0 z-10 flex justify-end p-3 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+              <div className="sticky top-0 right-0 z-10 flex justify-end p-3 bg-white/95 border-b border-gray-100">
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-2 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 hover:scale-110 transition-all duration-200"
+                  className="p-2 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 transition-all duration-200"
                 >
                   <ImCancelCircle className="h-6 w-6" />
                 </button>
@@ -139,6 +129,7 @@ const Cart = () => {
 
           {cartItems && cartItems.length > 0 ? (
             <div className="space-y-8">
+
               {/* Desktop Table */}
               <div className="hidden md:block bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
                 <table className="min-w-full">
@@ -156,15 +147,15 @@ const Cart = () => {
                       <tr key={index} className="hover:bg-gray-50 transition-all duration-200 group">
                         <td className="py-4 px-5">
                           <div className="flex items-center gap-3">
-                            <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-md group-hover:shadow-lg transition-shadow duration-200 flex-shrink-0">
+                            <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-md flex-shrink-0">
                               <img
-                                src={item?.image || item?.product?.image}
-                                alt={item?.name || item?.product?.name}
+                                src={getImage(item)}
+                                alt={getName(item)}
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               />
                             </div>
                             <span className="font-semibold text-gray-800 text-sm">
-                              {item?.name || item?.product?.name}
+                              {getName(item)}
                             </span>
                           </div>
                         </td>
@@ -182,22 +173,19 @@ const Cart = () => {
                         <td className="py-4 px-5">
                           <div className="flex justify-center gap-2">
                             <button
-                              onClick={() => {
-                                setIsModalOpen(true);
-                                setProd(item);
-                              }}
+                              onClick={() => { setIsModalOpen(true); setProd(item); }}
                               title="Edit"
-                              className="p-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:shadow-lg hover:scale-110 transition-all duration-200 cursor-pointer"
+                              className="p-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:scale-110 transition-all duration-200 cursor-pointer"
                             >
                               <RiEditCircleFill className="w-4 h-4" />
                             </button>
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
-                                HandleDeleteCart(item?.id || item?.productid);
+                                HandleDeleteCart(item?.productid || item?.id);
                               }}
                               title="Delete"
-                              className="p-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:shadow-lg hover:scale-110 transition-all duration-200 cursor-pointer"
+                              className="p-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:scale-110 transition-all duration-200 cursor-pointer"
                             >
                               <RiDeleteBin3Fill className="w-4 h-4" />
                             </button>
@@ -219,14 +207,14 @@ const Cart = () => {
                     <div className="flex items-start gap-4 mb-4">
                       <div className="relative w-24 h-24 rounded-xl overflow-hidden shadow-md flex-shrink-0">
                         <img
-                          src={item.image || item?.product?.image}
-                          alt={item.name || item?.product?.name}
+                          src={getImage(item)}
+                          alt={getName(item)}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-lg text-gray-900 mb-1">
-                          {item.name || item?.product?.name}
+                          {getName(item)}
                         </h3>
                         <p className="text-gray-600 font-semibold text-lg">
                           ${getPrice(item)}
@@ -251,10 +239,7 @@ const Cart = () => {
 
                     <div className="flex gap-3">
                       <button
-                        onClick={() => {
-                          setIsModalOpen(true);
-                          setProd(item);
-                        }}
+                        onClick={() => { setIsModalOpen(true); setProd(item); }}
                         className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
                       >
                         <RiEditCircleFill className="w-5 h-5" />
@@ -263,7 +248,7 @@ const Cart = () => {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          HandleDeleteCart(item?.id || item?.productid);
+                          HandleDeleteCart(item?.productid || item?.id);
                         }}
                         className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200"
                       >
@@ -281,35 +266,26 @@ const Cart = () => {
                   <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-200">
                     Order Summary
                   </h2>
-
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between items-center text-gray-700">
                       <span className="font-medium">Items in Cart:</span>
-                      <span className="bg-gray-100 px-4 py-1.5 rounded-lg font-semibold">
-                        {cartCout}
-                      </span>
+                      <span className="bg-gray-100 px-4 py-1.5 rounded-lg font-semibold">{cartCout}</span>
                     </div>
                     <div className="flex justify-between items-center text-gray-700">
                       <span className="font-medium">Subtotal:</span>
-                      <span className="font-semibold text-lg">
-                        ${cartTotal(cartItems)}
-                      </span>
+                      <span className="font-semibold text-lg">${cartTotal(cartItems)}</span>
                     </div>
                   </div>
-
                   <div className="pt-4 border-t-2 border-gray-200 mb-6">
                     <div className="flex justify-between items-center">
                       <span className="text-xl font-bold text-gray-900">Total:</span>
-                      <span className="text-2xl font-bold text-gray-900">
-                        ${cartTotal(cartItems)}
-                      </span>
+                      <span className="text-2xl font-bold text-gray-900">${cartTotal(cartItems)}</span>
                     </div>
                   </div>
-
                   <button
                     onClick={HandleInitializePayment}
                     disabled={isLoading || cartItems.length === 0}
-                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 transform 
+                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 
                       ${isLoading || cartItems.length === 0
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-black text-white hover:bg-gray-800 hover:shadow-2xl hover:scale-[1.02]"
@@ -323,10 +299,14 @@ const Cart = () => {
           ) : (
             <div className="flex flex-col items-center justify-center mt-20 bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto border border-gray-200">
               <div className="text-6xl mb-6">🛒</div>
-              <p className="text-2xl font-semibold text-gray-800 mb-2">Your cart is empty</p>
+              <p className="text-2xl font-semibold text-gray-800 mb-2">
+                Your cart is empty
+              </p>
               <p className="text-gray-600 mb-8 text-center">
                 Looks like you haven't added any items yet
               </p>
+
+              {/* The <a> tag was missing its opening bracket and name */}
               <a
                 href="/"
                 className="bg-black text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:scale-105"
