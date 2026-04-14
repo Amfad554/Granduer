@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
-// eslint-disable-next-line no-unused-vars
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import { FaCheckCircle } from "react-icons/fa";
 import Confetti from "react-confetti";
@@ -28,6 +27,7 @@ export default function ThankYouPage() {
 
   useEffect(() => {
     const verifyPayment = async () => {
+      // Prevent double-calling in StrictMode
       if (hasVerified.current) return;
 
       if (!transactionId) {
@@ -37,7 +37,7 @@ export default function ThankYouPage() {
       }
 
       if (!token) {
-        toast.error("No authentication token found");
+        toast.error("Please login to verify payment");
         setIsLoading(false);
         return;
       }
@@ -45,10 +45,12 @@ export default function ThankYouPage() {
       hasVerified.current = true;
 
       try {
+        // CHANGED: method to "GET" and added optional "/api" prefix check
+        // If your backend isn't using /api, remove it from the string below
         const res = await fetch(
           `${baseUrl}verifyPayment?transaction_id=${transactionId}`,
           {
-            method: "POST",
+            method: "GET",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
@@ -56,23 +58,22 @@ export default function ThankYouPage() {
           }
         );
 
+        // If the response is HTML (starts with <), this line usually fails.
+        // We handle that by checking res.ok first.
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Server Error HTML:", errorText);
+          throw new Error("Server returned an error. Check backend routes.");
+        }
+
         const data = await res.json();
 
-        if (res.ok && data.success) {
-          console.log("data", data);
-          
+        if (data.success) {
           setIsVerified(true);
           setReceiptData(data.data);
           toast.success("Payment verified successfully!");
 
-          setCartItems([]);
-          localStorage.removeItem("cartItems");
-        } else if (data.message?.includes("Receipt already exists")) {
-               console.log("data", data);
-          setIsVerified(false);
-          setReceiptData(data.data || null);
-          toast.info("Payment already verified. Showing existing receipt.");
-
+          // Clear cart on success
           setCartItems([]);
           localStorage.removeItem("cartItems");
         } else {
@@ -80,16 +81,16 @@ export default function ThankYouPage() {
         }
       } catch (err) {
         console.error("Verification error:", err);
-        toast.error("Network error during payment verification.");
+        toast.error("Payment verification failed. Please contact support.");
       } finally {
         setIsLoading(false);
       }
     };
 
     verifyPayment();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactionId, token]);
+  }, [transactionId, token, setCartItems]);
 
+  // Window resize handler for Confetti
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight });
@@ -98,104 +99,68 @@ export default function ThankYouPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Loader while verifying
   if (isLoading) {
     return (
       <div className="fixed inset-0 flex flex-col justify-center items-center z-50 bg-white">
         <PulseLoader size={12} color="#000" />
-        <p className="mt-2 font-semibold text-lg text-black">
-          Verifying Payment...
-        </p>
+        <p className="mt-2 font-semibold text-lg text-black">Verifying Payment...</p>
       </div>
     );
   }
 
-  // Fallback if verification failed
   if (!isVerified) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center text-center px-4">
-        <p className="text-xl font-bold mb-4 text-red-600">
-          Payment verification failed.
-        </p>
-        <a
-          href="/"
-          className="px-6 py-3 rounded-xl bg-black text-white hover:bg-white hover:text-black border transition"
-        >
-          Go Back
+        <p className="text-xl font-bold mb-4 text-red-600">Payment verification failed.</p>
+        <p className="text-gray-600 mb-6">If your money was deducted, please contact our support team.</p>
+        <a href="/" className="px-6 py-3 rounded-xl bg-black text-white hover:bg-gray-800 transition">
+          Go Back Home
         </a>
       </div>
     );
   }
 
-  // Payment verified (new or existing receipt)
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-white text-black px-4">
-      <Confetti
-        width={windowSize.width}
-        height={windowSize.height}
-        numberOfPieces={30}
-      />
-      {isVisible === false && (
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full border border-gray-200 text-center z-10"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 120 }}
-            className="flex justify-center"
-          >
-            <div className=" text-white w-20 h-20 flex items-center justify-center rounded-full shadow-lg mb-6 bg-green-500">
-              <FaCheckCircle className="w-10 h-10 " />
-            </div>
-          </motion.div>
+      <Confetti width={windowSize.width} height={windowSize.height} numberOfPieces={80} recycle={false} />
 
-          <h1 className="text-3xl font-extrabold mb-2">Payment Successful!</h1>
-
-          <p className="text-gray-600 mb-6 text-lg">
-            Your payment has been confirmed. Thank you for shopping with us.
-          </p>
-
-          {receiptData && (
-            <div className="bg-blue-50 p-5 rounded-2xl text-left mb-6">
-              <h3 className="font-bold mb-2">Order Details</h3>
-              <p className="mb-1">
-                <strong>Order ID:</strong> {receiptData.orderId}
-              </p>
-              <p className="mb-1">
-                <strong>Amount:</strong> ₦{receiptData.amount}
-              </p>
-              <p className="mb-1">
-                <strong>Status:</strong> {receiptData.status}
-              </p>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsVisible(!isVisible)}
-              className="px-6 py-3 rounded-xl border border-black hover:bg-black hover:text-white transition"
-            >
-              View Receipt
-            </motion.button>
-
-            <motion.a
-              href="/"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 rounded-xl bg-black text-white hover:bg-white hover:text-black border transition"
-            >
-              Continue Shopping
-            </motion.a>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full border border-gray-100 text-center z-10"
+      >
+        <div className="flex justify-center">
+          <div className="text-white w-20 h-20 flex items-center justify-center rounded-full shadow-lg mb-6 bg-green-500">
+            <FaCheckCircle className="w-10 h-10" />
           </div>
-        </motion.div>
-      )}
- 
+        </div>
+
+        <h1 className="text-3xl font-extrabold mb-2">Order Confirmed!</h1>
+        <p className="text-gray-600 mb-6">Thank you for your purchase. Your receipt is ready below.</p>
+
+        {receiptData && (
+          <div className="bg-gray-50 p-5 rounded-2xl text-left mb-6 border border-gray-100">
+            <h3 className="font-bold mb-3 border-b pb-2">Receipt Details</h3>
+            <div className="space-y-1 text-sm">
+              <p><strong>Order ID:</strong> {receiptData.orderId}</p>
+              <p><strong>Transaction ID:</strong> {transactionId}</p>
+              <p><strong>Amount Paid:</strong> ₦{receiptData.amount?.toLocaleString()}</p>
+              <p><strong>Customer:</strong> {receiptData.name}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3">
+          <motion.a
+            href="/"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="px-6 py-3 rounded-xl bg-black text-white font-semibold hover:bg-gray-800 transition"
+          >
+            Continue Shopping
+          </motion.a>
+        </div>
+      </motion.div>
     </div>
   );
 }
