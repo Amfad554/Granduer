@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { useState, useEffect } from "react";
 import DotLoader from "react-spinners/DotLoader";
-
+import ProductProvider from "./Context/ProductContext.jsx"; 
 import "react-toastify/dist/ReactToastify.css";
 
 export const baseUrl = "https://ecombackend-cqbc.onrender.com/";
@@ -17,6 +17,7 @@ function App() {
   }, []);
 
   return (
+        <ProductProvider>
     <>
       <ToastContainer
         position="top-right"
@@ -39,6 +40,7 @@ function App() {
         <Outlet />
       )}
     </>
+    </ProductProvider>
   );
 }
 
