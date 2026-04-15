@@ -347,14 +347,17 @@ const ProductProvider = ({ children }) => {
         });
 
         const data = await res.json();
+        console.log("Full Server Response:", data); // Check this in the browser console
 
         if (res.ok) {
-          toast.success(data?.message || "Cart updated successfully");
           const items = data?.data?.ProductCart ?? [];
+          console.log("Extracted Items for State:", items); // Is the updated item in here?
+
           setLocalData("cartItems", items);
-          setCartItems(items);
+          setCartItems([...items]); // Try using a spread to force a re-render
+          toast.success(data?.message);
         } else {
-          toast.error(data?.message || "Failed to update cart.");
+          toast.error(data?.message);
         }
       } // <-- Correctly closed the else block here
     } catch (error) {
