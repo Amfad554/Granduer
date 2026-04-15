@@ -46,7 +46,7 @@ const ProductProvide = ({ children }) => {
 
   const [productData, setProductData] = useState(null);
   const [isAuthentified, setIsAuthentified] = useState(
-    localStorage.getItem("isAuthentified") === "true"
+    localStorage.getItem("isAuthentified") === "true" && !!localStorage.getItem("token") 
   );
   const [cartCout, setCartCount] = useState(0);
   const [favouriteCout, setfavouriteCout] = useState(0);
@@ -178,11 +178,13 @@ const ProductProvide = ({ children }) => {
   }, [isAuthentified, logout, resetActivityTimer]);
 
   // ─── Sync auth state from User ────────────────────────────────────────────
-  useEffect(() => {
-    if (User && User?.role) {
-      setIsAuthentified(true);
-    }
-  }, [User]);
+useEffect(() => {
+  if (User && User?.role && token) {
+    setIsAuthentified(true);
+  } else {
+    setIsAuthentified(false); // ✅ clear it if no valid token
+  }
+}, [User, token]);
 
   // ─── Cart count ───────────────────────────────────────────────────────────
   useEffect(() => {
