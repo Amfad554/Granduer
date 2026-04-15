@@ -41,7 +41,7 @@ const setLocalData = (key, value) => {
   }
 };
 
-const ProductProvide = ({ children }) => {
+const ProductProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const [productData, setProductData] = useState(null);
@@ -404,23 +404,41 @@ const ProductProvide = ({ children }) => {
       toast.error("Unable to delete cart, please try again later!");
     }
   };
-// ... previous code (HandleAddFavouritrCart, etc.)
+  // ... rest of your code ...
 
-    return (
-      <ProductContext.Provider
-        value={{
-          HandleGetProducts, HandleAddTCart, HandleUpdateCart,
-          HandleDeleteCart, HandleAddFavouritrCart, handleLoginSuccess,
-          logout, productData, cartItems, cartCout, favoriteItem,
-          favouriteCout, isAuthentified, setIsAuthentified, loading,
-          setLoading, setCartItems, setToken, token, User, setUser,
-          showWarning, setShowWarning,
-        }}
-      >
-        {children}
-      </ProductContext.Provider>
-    );
-}; // Closes the ProductProvider component
+  // ─── Add to favourites ────────────────────────────────────────────────────
+  const HandleAddFavouritrCart = (prod) => {
+    if (!isAuthentified) {
+      let storedFavouriteCart = getLocalData("favourieCart", []);
+      const existingItem = storedFavouriteCart?.find((item) => parseInt(item?.id) === parseInt(prod?.id));
+      let updatedFavouriteCart;
+      if (existingItem) {
+        toast.info("Item already in FavouriteCart");
+        updatedFavouriteCart = storedFavouriteCart;
+      } else {
+        updatedFavouriteCart = [...storedFavouriteCart, { ...prod, quantity: 1 }];
+        toast.success("Item Added to FavouriteCart Successfully!");
+      }
+      setLocalData("favourieCart", updatedFavouriteCart);
+      setfavoriteItem(updatedFavouriteCart);
+    }
+  };
+
+  return (
+    <ProductContext.Provider
+      value={{
+        HandleGetProducts, HandleAddTCart, HandleUpdateCart,
+        HandleDeleteCart, HandleAddFavouritrCart, handleLoginSuccess,
+        logout, productData, cartItems, cartCout, favoriteItem,
+        favouriteCout, isAuthentified, setIsAuthentified, loading,
+        setLoading, setCartItems, setToken, token, User, setUser,
+        showWarning, setShowWarning,
+      }}
+    >
+      {children}
+    </ProductContext.Provider>
+  );
+}; // Name matches the export now
 
 export { ProductContext };
-export default ProductProvider; // Added this to make importing easier
+export default ProductProvider;
