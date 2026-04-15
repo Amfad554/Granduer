@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 
 const ProductContext = createContext();
 
-const INACTIVITY_LIMIT = 30 * 60 * 1000;     // 30 minutes
-const SESSION_LIMIT = 24 * 60 * 60 * 1000; // 24 hours
+const INACTIVITY_LIMIT = 30 * 60 * 1000;
+const SESSION_LIMIT = 24 * 60 * 60 * 1000;
 
 const getLocalData = (item, fallback) => {
   try {
@@ -46,7 +46,8 @@ const ProductProvide = ({ children }) => {
 
   const [productData, setProductData] = useState(null);
   const [isAuthentified, setIsAuthentified] = useState(
-    localStorage.getItem("isAuthentified") === "true" && !!localStorage.getItem("token") 
+    localStorage.getItem("isAuthentified") === "true" &&
+    !!localStorage.getItem("token")
   );
   const [cartCout, setCartCount] = useState(0);
   const [favouriteCout, setfavouriteCout] = useState(0);
@@ -104,12 +105,10 @@ const ProductProvide = ({ children }) => {
 
     localStorage.setItem("lastActive", Date.now().toString());
 
-    // Warn 2 minutes before inactivity logout
     warningTimerRef.current = setTimeout(() => {
       setShowWarning(true);
     }, INACTIVITY_LIMIT - 2 * 60 * 1000);
 
-    // Logout after full inactivity period
     activityTimerRef.current = setTimeout(() => {
       logout("inactivity");
     }, INACTIVITY_LIMIT);
@@ -123,45 +122,23 @@ const ProductProvide = ({ children }) => {
     const loginTime = parseInt(localStorage.getItem("loginTime") || "0");
     const lastActive = parseInt(localStorage.getItem("lastActive") || "0");
 
-    // Check immediately on mount / tab refocus
-    if (loginTime && now - loginTime > SESSION_LIMIT) {
-      logout("session");
-      return;
-    }
-    if (lastActive && now - lastActive > INACTIVITY_LIMIT) {
-      logout("inactivity");
-      return;
-    }
+    if (loginTime && now - loginTime > SESSION_LIMIT) { logout("session"); return; }
+    if (lastActive && now - lastActive > INACTIVITY_LIMIT) { logout("inactivity"); return; }
 
-    // 24-hour hard session timer
-    const sessionRemaining = loginTime
-      ? SESSION_LIMIT - (now - loginTime)
-      : SESSION_LIMIT;
+    const sessionRemaining = loginTime ? SESSION_LIMIT - (now - loginTime) : SESSION_LIMIT;
+    sessionTimerRef.current = setTimeout(() => logout("session"), sessionRemaining);
 
-    sessionTimerRef.current = setTimeout(() => {
-      logout("session");
-    }, sessionRemaining);
-
-    // Activity events
     const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
     events.forEach((e) => window.addEventListener(e, resetActivityTimer));
     resetActivityTimer();
 
-    // Returning to tab after absence
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
         const now = Date.now();
         const loginTime = parseInt(localStorage.getItem("loginTime") || "0");
         const lastActive = parseInt(localStorage.getItem("lastActive") || "0");
-
-        if (loginTime && now - loginTime > SESSION_LIMIT) {
-          logout("session");
-          return;
-        }
-        if (lastActive && now - lastActive > INACTIVITY_LIMIT) {
-          logout("inactivity");
-          return;
-        }
+        if (loginTime && now - loginTime > SESSION_LIMIT) { logout("session"); return; }
+        if (lastActive && now - lastActive > INACTIVITY_LIMIT) { logout("inactivity"); return; }
         resetActivityTimer();
       }
     };
@@ -177,14 +154,14 @@ const ProductProvide = ({ children }) => {
     };
   }, [isAuthentified, logout, resetActivityTimer]);
 
-  // ─── Sync auth state from User ────────────────────────────────────────────
-useEffect(() => {
-  if (User && User?.role && token) {
-    setIsAuthentified(true);
-  } else {
-    setIsAuthentified(false); // ✅ clear it if no valid token
-  }
-}, [User, token]);
+  // ─── Sync auth state from User + token ───────────────────────────────────
+  useEffect(() => {
+    if (User && User?.role && token) {
+      setIsAuthentified(true);
+    } else {
+      setIsAuthentified(false);
+    }
+  }, [User, token]);
 
   // ─── Cart count ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -212,7 +189,6 @@ useEffect(() => {
             headers: { Authorization: `Bearer ${token}` },
           });
           const data = await res.json();
-
           if (res.ok) {
             const items = data?.data?.ProductCart ?? [];
             if (items.length > 0) {
@@ -242,11 +218,9 @@ useEffect(() => {
     }
   };
 
-  useEffect(() => {
-    HandleGetProducts();
-  }, []);
+  useEffect(() => { HandleGetProducts(); }, []);
 
-  // ─── Login helper (call this after successful login API) ──────────────────
+  // ─── Login helper ─────────────────────────────────────────────────────────
   const handleLoginSuccess = (userData, userToken) => {
     setUser(userData);
     setToken(userToken);
@@ -262,10 +236,7 @@ useEffect(() => {
   const HandleAddTCart = async (prod, quantity = 1, size = null, color = null) => {
     if (!isAuthentified) {
       let storedCartItems = getLocalData("cartItems", []);
-      const existingItem = storedCartItems.find(
-        (item) => parseInt(item.id) === parseInt(prod.id)
-      );
-
+      const existingItem = storedCartItems.find((item) => parseInt(item.id) === parseInt(prod.id));
       let updatedCartItems;
       if (existingItem) {
         updatedCartItems = storedCartItems.map((item) =>
@@ -278,7 +249,6 @@ useEffect(() => {
         updatedCartItems = [...storedCartItems, { ...prod, quantity, size, color }];
         toast.success("Item Added to cart Successfully!");
       }
-
       setLocalData("cartItems", updatedCartItems);
       setCartItems(updatedCartItems);
     } else {
@@ -286,21 +256,14 @@ useEffect(() => {
         const payload = {
           userid: Number(User?.userid),
           productid: Number(prod?.id),
-          color,
-          size,
-          quantity,
+          color, size, quantity,
         };
-
         const res = await fetch(`${baseUrl}addcart`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
-
         if (res.ok) {
           toast.success(data?.message);
           const items = data?.data?.ProductCart ?? [];
@@ -320,38 +283,27 @@ useEffect(() => {
     try {
       if (!isAuthentified) {
         const storedCartItems = getLocalData("cartItems", []);
-        const existingItem = storedCartItems.find(
-          (item) => parseInt(item?.id) === parseInt(prod?.id)
-        );
-
+        const existingItem = storedCartItems.find((item) => parseInt(item?.id) === parseInt(prod?.id));
         if (!existingItem) { toast.error("Item does not exist in cart!"); return; }
-
         const updatedCartItems = storedCartItems.map((item) =>
           parseInt(item?.id) === parseInt(prod?.id)
             ? { ...item, size: prod?.size ?? item?.size, color: prod?.color ?? item?.color, quantity: prod?.quantity ?? item?.quantity }
             : item
         );
-
         setLocalData("cartItems", updatedCartItems);
         setCartItems(updatedCartItems);
         toast.success("Item Updated Successfully!");
       } else {
         const res = await fetch(`${baseUrl}updatecart`, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             userid: Number(User?.userid),
             productid: Number(prod?.product?.id || prod?.productid),
-            color: prod?.color,
-            size: prod?.size,
-            quantity: prod?.quantity,
+            color: prod?.color, size: prod?.size, quantity: prod?.quantity,
           }),
         });
         const data = await res.json();
-
         if (res.ok) {
           toast.success(data?.message);
           const items = data?.data?.ProductCart ?? [];
@@ -371,23 +323,17 @@ useEffect(() => {
     try {
       if (!isAuthentified) {
         const storedCartItems = getLocalData("cartItems", []);
-        const updatedCartItems = storedCartItems?.filter(
-          (item) => parseInt(item.id) !== parseInt(id)
-        );
+        const updatedCartItems = storedCartItems?.filter((item) => parseInt(item.id) !== parseInt(id));
         setLocalData("cartItems", updatedCartItems);
         setCartItems(updatedCartItems);
         toast.success("Item removed from cart!");
       } else {
         const res = await fetch(`${baseUrl}deletecart`, {
           method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ userid: Number(User?.userid), productid: Number(id) }),
         });
         const data = await res.json();
-
         if (res.ok) {
           toast.success(data?.message);
           const items = data?.data?.ProductCart ?? [];
@@ -406,10 +352,7 @@ useEffect(() => {
   const HandleAddFavouritrCart = (prod) => {
     if (!isAuthentified) {
       let storedFavouriteCart = getLocalData("favourieCart", []);
-      const existingItem = storedFavouriteCart?.find(
-        (item) => parseInt(item?.id) === parseInt(prod?.id)
-      );
-
+      const existingItem = storedFavouriteCart?.find((item) => parseInt(item?.id) === parseInt(prod?.id));
       let updatedFavouriteCart;
       if (existingItem) {
         toast.info("Item already in FavouriteCart");
@@ -418,7 +361,6 @@ useEffect(() => {
         updatedFavouriteCart = [...storedFavouriteCart, { ...prod, quantity: 1 }];
         toast.success("Item Added to FavouriteCart Successfully!");
       }
-
       setLocalData("favourieCart", updatedFavouriteCart);
       setfavoriteItem(updatedFavouriteCart);
     }
@@ -427,29 +369,12 @@ useEffect(() => {
   return (
     <ProductContext.Provider
       value={{
-        HandleGetProducts,
-        HandleAddTCart,
-        HandleUpdateCart,
-        HandleDeleteCart,
-        HandleAddFavouritrCart,
-        handleLoginSuccess,
-        logout,
-        productData,
-        cartItems,
-        cartCout,
-        favoriteItem,
-        favouriteCout,
-        isAuthentified,
-        setIsAuthentified,
-        loading,
-        setLoading,
-        setCartItems,
-        setToken,
-        token,
-        User,
-        setUser,
-        showWarning,
-        setShowWarning,
+        HandleGetProducts, HandleAddTCart, HandleUpdateCart,
+        HandleDeleteCart, HandleAddFavouritrCart, handleLoginSuccess,
+        logout, productData, cartItems, cartCout, favoriteItem,
+        favouriteCout, isAuthentified, setIsAuthentified, loading,
+        setLoading, setCartItems, setToken, token, User, setUser,
+        showWarning, setShowWarning,
       }}
     >
       {children}
