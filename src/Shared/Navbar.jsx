@@ -1,5 +1,4 @@
-// Cleaned and properly formatted Navbar component
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { CiMenuFries } from "react-icons/ci";
 import { FaShoppingCart, FaUser, FaTachometerAlt } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
@@ -7,12 +6,7 @@ import { Link, NavLink } from "react-router-dom";
 import { ProductContext } from "../Context/ProductContext";
 
 const Navbar = () => {
-  // ✅ Use isAuthentified from context instead of local isLoggedIn state
-  const { cartCout, isAuthentified } = useContext(ProductContext);
-
-  useEffect(() => {
-    console.log("cartcount:", cartCout);
-  }, [cartCout]);
+  const { cartCout, isAuthentified, showWarning, setShowWarning } = useContext(ProductContext);
 
   const [isMenuOpen, setIsmenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -31,7 +25,20 @@ const Navbar = () => {
   return (
     <div className="sticky top-0 left-0 z-40">
 
-      {/* Large Screen */}
+      {/* ── Inactivity Warning Banner ── */}
+      {showWarning && isAuthentified && (
+        <div className="w-full bg-yellow-400 text-black text-center text-sm py-2 px-4 flex justify-center items-center gap-4 z-50">
+          <span>⚠️ You'll be logged out in 2 minutes due to inactivity. Move your mouse or click anywhere to stay logged in.</span>
+          <button
+            onClick={() => setShowWarning(false)}
+            className="ml-4 text-black font-bold underline text-xs"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* ── Large Screen ── */}
       <div className="hidden lg:block">
         <div className="w-full bg-primary px-6 lg:px-16 py-6 flex items-center justify-between text-white relative">
 
@@ -107,7 +114,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Screen */}
+      {/* ── Mobile Screen ── */}
       <div className="lg:hidden block">
         <div className="relative w-full bg-primary px-6 py-6 flex items-center justify-between text-white">
 
@@ -167,11 +174,10 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`${
-            isMenuOpen
+          className={`${isMenuOpen
               ? "max-h-[2000px] opacity-100 block transition duration-500"
               : "max-h-0 opacity-0 hidden transition-all duration-500"
-          } absolute left-0 w-full bg-white text-black`}
+            } absolute left-0 w-full bg-white text-black`}
         >
           <div className="flex flex-col items-center gap-4 p-4">
             {navlinks.map((item) => (

@@ -1,8 +1,12 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 import { baseUrl } from "../App";
+import { useNavigate } from "react-router-dom";
 
 const ProductContext = createContext();
+
+const INACTIVITY_LIMIT = 30 * 60 * 1000;     // 30 minutes
+const SESSION_LIMIT = 24 * 60 * 60 * 1000; // 24 hours
 
 const getLocalData = (item, fallback) => {
   try {
@@ -38,15 +42,16 @@ const setLocalData = (key, value) => {
 };
 
 const ProductProvide = ({ children }) => {
-  const [productData, setProductData] = useState(null);
+  const navigate = useNavigate();
 
+  const [productData, setProductData] = useState(null);
   const [isAuthentified, setIsAuthentified] = useState(
     localStorage.getItem("isAuthentified") === "true"
   );
-
   const [cartCout, setCartCount] = useState(0);
   const [favouriteCout, setfavouriteCout] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
 
   const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
   const [User, setUser] = useState(() => getLocalData("user", {}));
@@ -57,9 +62,123 @@ const ProductProvide = ({ children }) => {
     return t && t !== "undefined" && t !== "null" ? t : "";
   });
 
+  const activityTimerRef = useRef(null);
+  const sessionTimerRef = useRef(null);
+  const warningTimerRef = useRef(null);
+
+  // ─── Logout ───────────────────────────────────────────────────────────────
+  const logout = useCallback((reason = "manual") => {
+    setIsAuthentified(false);
+    setUser({});
+    setToken("");
+    setCartItems([]);
+    setShowWarning(false);
+
+    localStorage.removeItem("isAuthentified");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("cartItems");
+    localStorage.removeItem("loginTime");
+    localStorage.removeItem("lastActive");
+
+    clearTimeout(activityTimerRef.current);
+    clearTimeout(sessionTimerRef.current);
+    clearTimeout(warningTimerRef.current);
+
+    if (reason === "inactivity") {
+      toast.info("You were logged out due to inactivity.");
+    } else if (reason === "session") {
+      toast.info("Your 24-hour session has expired. Please log in again.");
+    }
+
+    navigate("/login");
+  }, [navigate]);
+
+  // ─── Reset inactivity timer ───────────────────────────────────────────────
+  const resetActivityTimer = useCallback(() => {
+    if (!isAuthentified) return;
+
+    setShowWarning(false);
+    clearTimeout(activityTimerRef.current);
+    clearTimeout(warningTimerRef.current);
+
+    localStorage.setItem("lastActive", Date.now().toString());
+
+    // Warn 2 minutes before inactivity logout
+    warningTimerRef.current = setTimeout(() => {
+      setShowWarning(true);
+    }, INACTIVITY_LIMIT - 2 * 60 * 1000);
+
+    // Logout after full inactivity period
+    activityTimerRef.current = setTimeout(() => {
+      logout("inactivity");
+    }, INACTIVITY_LIMIT);
+  }, [isAuthentified, logout]);
+
+  // ─── Session & inactivity watcher ────────────────────────────────────────
+  useEffect(() => {
+    if (!isAuthentified) return;
+
+    const now = Date.now();
+    const loginTime = parseInt(localStorage.getItem("loginTime") || "0");
+    const lastActive = parseInt(localStorage.getItem("lastActive") || "0");
+
+    // Check immediately on mount / tab refocus
+    if (loginTime && now - loginTime > SESSION_LIMIT) {
+      logout("session");
+      return;
+    }
+    if (lastActive && now - lastActive > INACTIVITY_LIMIT) {
+      logout("inactivity");
+      return;
+    }
+
+    // 24-hour hard session timer
+    const sessionRemaining = loginTime
+      ? SESSION_LIMIT - (now - loginTime)
+      : SESSION_LIMIT;
+
+    sessionTimerRef.current = setTimeout(() => {
+      logout("session");
+    }, sessionRemaining);
+
+    // Activity events
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    events.forEach((e) => window.addEventListener(e, resetActivityTimer));
+    resetActivityTimer();
+
+    // Returning to tab after absence
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        const now = Date.now();
+        const loginTime = parseInt(localStorage.getItem("loginTime") || "0");
+        const lastActive = parseInt(localStorage.getItem("lastActive") || "0");
+
+        if (loginTime && now - loginTime > SESSION_LIMIT) {
+          logout("session");
+          return;
+        }
+        if (lastActive && now - lastActive > INACTIVITY_LIMIT) {
+          logout("inactivity");
+          return;
+        }
+        resetActivityTimer();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearTimeout(activityTimerRef.current);
+      clearTimeout(sessionTimerRef.current);
+      clearTimeout(warningTimerRef.current);
+      events.forEach((e) => window.removeEventListener(e, resetActivityTimer));
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [isAuthentified, logout, resetActivityTimer]);
+
   // ─── Sync auth state from User ────────────────────────────────────────────
   useEffect(() => {
-    console.log("UserContext:", User);
     if (User && User?.role) {
       setIsAuthentified(true);
     }
@@ -68,10 +187,7 @@ const ProductProvide = ({ children }) => {
   // ─── Cart count ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (cartItems && Array.isArray(cartItems)) {
-      const count = cartItems.reduce((acc, curr) => {
-        const qty = curr?.quantity || 0;
-        return acc + Number(qty);
-      }, 0);
+      const count = cartItems.reduce((acc, curr) => acc + Number(curr?.quantity || 0), 0);
       setCartCount(count);
     }
   }, [cartItems]);
@@ -91,21 +207,17 @@ const ProductProvide = ({ children }) => {
         try {
           const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
             method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           });
           const data = await res.json();
-          console.log("Server cart response:", res.status, data);
 
           if (res.ok) {
-            const items = data?.data?.ProductCart ?? []; // ✅ Fixed casing
+            const items = data?.data?.ProductCart ?? [];
             if (items.length > 0) {
               setCartItems(items);
               setLocalData("cartItems", items);
             }
           }
-          // ✅ On failure, keep existing localStorage cart
         } catch (error) {
           console.error("Failed to fetch server cart:", error);
         }
@@ -120,11 +232,8 @@ const ProductProvide = ({ children }) => {
       const res = await fetch(`${baseUrl}getAllProduct`, { method: "GET" });
       const data = await res.json();
       if (res.ok) {
-        console.log(data);
         setProductData(data?.data);
         setLocalData("productData", data);
-      } else {
-        console.log(data);
       }
     } catch (error) {
       console.log(error);
@@ -134,6 +243,18 @@ const ProductProvide = ({ children }) => {
   useEffect(() => {
     HandleGetProducts();
   }, []);
+
+  // ─── Login helper (call this after successful login API) ──────────────────
+  const handleLoginSuccess = (userData, userToken) => {
+    setUser(userData);
+    setToken(userToken);
+    setIsAuthentified(true);
+    setLocalData("user", userData);
+    localStorage.setItem("token", userToken);
+    localStorage.setItem("isAuthentified", "true");
+    localStorage.setItem("loginTime", Date.now().toString());
+    localStorage.setItem("lastActive", Date.now().toString());
+  };
 
   // ─── Add to cart ──────────────────────────────────────────────────────────
   const HandleAddTCart = async (prod, quantity = 1, size = null, color = null) => {
@@ -176,19 +297,17 @@ const ProductProvide = ({ children }) => {
           },
           body: JSON.stringify(payload),
         });
-
         const data = await res.json();
+
         if (res.ok) {
           toast.success(data?.message);
-          const items = data?.data?.ProductCart ?? []; // ✅ Fixed casing
+          const items = data?.data?.ProductCart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
           toast.error(data?.message);
-          // ✅ Don't touch cartItems on failure
         }
       } catch (error) {
-        console.log("error", error.message);
         toast.error("Unable to add to cart, please try again later!");
       }
     }
@@ -203,19 +322,11 @@ const ProductProvide = ({ children }) => {
           (item) => parseInt(item?.id) === parseInt(prod?.id)
         );
 
-        if (!existingItem) {
-          toast.error("Item does not exist in cart!");
-          return;
-        }
+        if (!existingItem) { toast.error("Item does not exist in cart!"); return; }
 
         const updatedCartItems = storedCartItems.map((item) =>
           parseInt(item?.id) === parseInt(prod?.id)
-            ? {
-              ...item,
-              size: prod?.size ?? item?.size,
-              color: prod?.color ?? item?.color,
-              quantity: prod?.quantity ?? item?.quantity,
-            }
+            ? { ...item, size: prod?.size ?? item?.size, color: prod?.color ?? item?.color, quantity: prod?.quantity ?? item?.quantity }
             : item
         );
 
@@ -237,11 +348,11 @@ const ProductProvide = ({ children }) => {
             quantity: prod?.quantity,
           }),
         });
-
         const data = await res.json();
+
         if (res.ok) {
           toast.success(data?.message);
-          const items = data?.data?.ProductCart ?? []; // ✅ Fixed casing
+          const items = data?.data?.ProductCart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
@@ -249,7 +360,6 @@ const ProductProvide = ({ children }) => {
         }
       }
     } catch (error) {
-      console.log(error.message);
       toast.error("Unable to update cart, please try again later!");
     }
   };
@@ -262,7 +372,6 @@ const ProductProvide = ({ children }) => {
         const updatedCartItems = storedCartItems?.filter(
           (item) => parseInt(item.id) !== parseInt(id)
         );
-
         setLocalData("cartItems", updatedCartItems);
         setCartItems(updatedCartItems);
         toast.success("Item removed from cart!");
@@ -273,16 +382,13 @@ const ProductProvide = ({ children }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            userid: Number(User?.userid),
-            productid: Number(id),
-          }),
+          body: JSON.stringify({ userid: Number(User?.userid), productid: Number(id) }),
         });
-
         const data = await res.json();
+
         if (res.ok) {
           toast.success(data?.message);
-          const items = data?.data?.ProductCart ?? []; // ✅ Fixed casing
+          const items = data?.data?.ProductCart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
@@ -290,7 +396,6 @@ const ProductProvide = ({ children }) => {
         }
       }
     } catch (error) {
-      console.log("error", error.message);
       toast.error("Unable to delete cart, please try again later!");
     }
   };
@@ -314,8 +419,6 @@ const ProductProvide = ({ children }) => {
 
       setLocalData("favourieCart", updatedFavouriteCart);
       setfavoriteItem(updatedFavouriteCart);
-    } else {
-      console.log("User is authenticated — handle API favourites instead");
     }
   };
 
@@ -324,6 +427,11 @@ const ProductProvide = ({ children }) => {
       value={{
         HandleGetProducts,
         HandleAddTCart,
+        HandleUpdateCart,
+        HandleDeleteCart,
+        HandleAddFavouritrCart,
+        handleLoginSuccess,
+        logout,
         productData,
         cartItems,
         cartCout,
@@ -331,9 +439,6 @@ const ProductProvide = ({ children }) => {
         favouriteCout,
         isAuthentified,
         setIsAuthentified,
-        HandleUpdateCart,
-        HandleDeleteCart,
-        HandleAddFavouritrCart,
         loading,
         setLoading,
         setCartItems,
@@ -341,6 +446,8 @@ const ProductProvide = ({ children }) => {
         token,
         User,
         setUser,
+        showWarning,
+        setShowWarning,
       }}
     >
       {children}

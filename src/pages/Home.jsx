@@ -106,7 +106,7 @@ const Home = () => {
               productData.map((product) => (
                 <SwiperSlide
                   key={product.id}
-                  className="flex justify-center items-center w-full mt-10 rounded-t-[50%] overflow-hidden"
+                  className="flex justify-center items-center w-full mt-10 overflow-hidden"
                 >
                   <Link to={`/product/${product.id}`} className="w-full h-full">
                     <img
