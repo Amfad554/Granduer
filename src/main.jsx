@@ -12,11 +12,11 @@ import Children from "./pages/Children.jsx";
 import NewArrivals from "./pages/NewArrivals.jsx";
 import Cart from "./pages/Cart.jsx";
 import SingleProduct from "./pages/SingleProduct.jsx";
-import UserLoginPage from "./pages/UserLogin.jsx";
 import AdminDash from "./Dashboard/AdminDash.jsx";
 import UserDash from "./Dashboard/userDash.jsx";
 import ThankYouPage from "./pages/ThankYouPage.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
+import UserLoginPage from "./pages/UserLogin.jsx";
 
 const router = createBrowserRouter([
   {
@@ -32,7 +32,7 @@ const router = createBrowserRouter([
       { path: "/newarrivals", element: <NewArrivals /> },
       { path: "/cart", element: <Cart /> },
       { path: "/product/:id", element: <SingleProduct /> },
-      { path: "/login", element: <UserLogin /> },
+      { path: "/login", element: <UserLoginPage /> },
       { path: "/AdminDash", element: <AdminDash /> },
       { path: "/userDash", element: <UserDash /> },
       { path: "/thankyou", element: <ThankYouPage /> },
