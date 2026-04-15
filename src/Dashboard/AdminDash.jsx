@@ -1,156 +1,126 @@
-import { useState, useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ProductContext } from "../Context/ProductContext";
-import {
-  FaPlusCircle,
-  FaList,
-  FaBox,
-  FaShoppingCart,
-  FaUsers,
-  FaTachometerAlt,
-} from "react-icons/fa";
-import CreateProduct from "./createProduct";
 import Layout from "../Shared/Layout/Layout";
+import CreateProduct from "./createProduct";
 
-const Dashboard = () => {
-  const { filteredProducts, HandleGetProducts, HandleAddTCart, cartCount } =
-    useContext(ProductContext);
+const INACTIVITY_LIMIT = 30 * 60 * 1000;
+const SESSION_LIMIT = 24 * 60 * 60 * 1000;
 
+export default function AdminDash() {
+  const { isAuthentified, User, productData, logout, HandleGetProducts } = useContext(ProductContext);
+  const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showAllProductsModal, setShowAllProductsModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
-  const [quantity, setQuantity] = useState(1);
-
+  // Role guard — admin only
   useEffect(() => {
-    HandleGetProducts();
-  }, []);
+    if (!isAuthentified) { navigate("/login"); return; }
+    if (User?.role !== "admin") { navigate("/userDash"); }
+  }, [isAuthentified, User, navigate]);
 
-  // Safe slice to avoid undefined errors
-  const recentProducts = (filteredProducts || []).slice(0, 5);
+  useEffect(() => { HandleGetProducts(); }, []);
 
-  const openEditModal = (prod) => {
-    setSelectedProduct(prod);
-    setSelectedSize(prod?.defaultSize || prod?.sizes?.[0] || "");
-    setSelectedColor(prod?.defaultColor || prod?.colors?.[0] || "");
-    setQuantity(1);
-    setShowEditModal(true);
-  };
+  // Session + inactivity timeout
+  useEffect(() => {
+    if (!isAuthentified) return;
+    const checkAndLogout = () => {
+      const now = Date.now();
+      const loginTime = parseInt(localStorage.getItem("loginTime") || "0");
+      const lastActive = parseInt(localStorage.getItem("lastActive") || "0");
+      if (loginTime && now - loginTime > SESSION_LIMIT) { logout("session"); return; }
+      if (lastActive && now - lastActive > INACTIVITY_LIMIT) { logout("inactivity"); }
+    };
+    const interval = setInterval(checkAndLogout, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthentified, logout]);
+
+  const recentProducts = (productData || []).slice(0, 5);
+
+  const navItems = [
+    { id: "dashboard", label: "Dashboard" },
+    { id: "products", label: "Products" },
+    { id: "orders", label: "Orders" },
+    { id: "users", label: "Users" },
+  ];
 
   return (
     <Layout>
-      <div className="md:flex min-h-screen bg-gray-100">
+      <div className="flex min-h-screen bg-gray-50">
+
         {/* Sidebar */}
-        <aside className="w-full md:w-64 bg-primary text-white flex flex-col p-4 md:p-6 text-center md:text-left">
-          <h2 className="text-2xl font-bold mb-6">Granduer Admin</h2>
-          <nav className="flex flex-col gap-3 w-full">
-            <a
-              href="#"
-              className="flex items-center gap-3 hover:text-black hover:bg-white p-3 rounded-md transition w-full justify-center md:justify-start"
-            >
-              <FaTachometerAlt /> Dashboard
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 hover:text-black hover:bg-white p-3 rounded-md transition w-full justify-center md:justify-start"
-            >
-              <FaBox /> Manage Products
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 hover:text-black hover:bg-white p-3 rounded-md transition w-full justify-center md:justify-start"
-            >
-              <FaUsers /> Users
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 hover:text-black hover:bg-white p-3 rounded-md transition w-full justify-center md:justify-start"
-            >
-              <FaShoppingCart /> Orders
-            </a>
+        <aside className="w-48 bg-black text-white flex flex-col p-4 gap-6 flex-shrink-0">
+          <div className="text-base font-medium tracking-widest pb-4 border-b border-white/10">
+            GRANDEUR
+          </div>
+          <nav className="flex flex-col gap-1">
+            {navItems.map((item) => (
+              <button key={item.id} onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm text-left transition ${
+                  activeTab === item.id ? "bg-white text-black font-medium" : "text-white/60 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                {item.label}
+              </button>
+            ))}
           </nav>
+          <div className="mt-auto">
+            <button onClick={() => logout("manual")}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-white/40 hover:text-white transition w-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              Log out
+            </button>
+          </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-8">
-          <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+        {/* Main */}
+        <main className="flex-1 p-6">
 
-          {/* Stats Cards */}
-          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-lg font-medium">Admin dashboard</h1>
+            <button onClick={() => setShowCreateModal(true)}
+              className="bg-black text-white text-sm px-4 py-2 rounded-md hover:bg-gray-800 transition">
+              + Add product
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-3 mb-6">
             {[
-              {
-                title: "Total Products",
-                icon: FaBox,
-                value: (filteredProducts || []).length,
-              },
-              { title: "Orders", icon: FaShoppingCart, value: 89 },
-              { title: "Users", icon: FaUsers, value: 342 },
-              { title: "Revenue", icon: FaTachometerAlt, value: 45200 },
-            ].map((card, index) => {
-              const Icon = card.icon;
-              return (
-                <div key={index} className="bg-white shadow-md rounded-xl p-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-2">
-                      <Icon className="text-primary text-3xl" />
-                      <h3 className="font-semibold">{card.title}</h3>
-                    </div>
-                    <p className="text-xl font-bold">
-                      {card.title === "Revenue"
-                        ? `$${card.value}`
-                        : card.value}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+              { label: "Products", value: (productData || []).length },
+              { label: "Orders", value: 89 },
+              { label: "Users", value: 342 },
+              { label: "Revenue", value: "$45,200" },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-white border border-gray-200 rounded-lg p-4">
+                <p className="text-xs text-gray-500 mb-1">{label}</p>
+                <p className="text-2xl font-medium">{value}</p>
+              </div>
+            ))}
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-white shadow-md rounded-xl p-6 flex flex-col items-center hover:shadow-xl transition"
-            >
-              <FaPlusCircle className="text-primary text-4xl mb-3" />
-              <h3 className="text-xl font-semibold">Add Product</h3>
-            </button>
-
-            <button
-              onClick={() => setShowAllProductsModal(true)}
-              className="bg-white shadow-md rounded-xl p-6 flex flex-col items-center hover:shadow-xl transition"
-            >
-              <FaList className="text-primary text-4xl mb-3" />
-              <h3 className="text-xl font-semibold">View All Products</h3>
-            </button>
-          </div>
-
-          {/* Recent Products Table */}
-          <div className="bg-white shadow-md rounded-xl p-6">
-            <h2 className="text-2xl font-bold mb-4">Recent Products</h2>
-            <table className="w-full text-left border-collapse">
+          {/* Products table */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h2 className="text-sm font-medium mb-3 pb-2 border-b border-gray-100">Recent products</h2>
+            <table className="w-full text-sm">
               <thead>
-                <tr>
-                  <th className="border-b p-2">Name</th>
-                  <th className="border-b p-2">Price</th>
-                  <th className="border-b p-2">Category</th>
-                  <th className="border-b p-2">Actions</th>
+                <tr className="text-xs text-gray-400">
+                  <th className="text-left pb-2 font-normal">Name</th>
+                  <th className="text-left pb-2 font-normal">Price</th>
+                  <th className="text-left pb-2 font-normal">Category</th>
+                  <th className="text-left pb-2 font-normal">Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-50">
                 {recentProducts.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-gray-100">
-                    <td className="p-2">{prod.name}</td>
-                    <td className="p-2">${prod.price}</td>
-                    <td className="p-2">{prod.subcategory}</td>
-                    <td className="p-2">
-                      <button
-                        onClick={() => openEditModal(prod)}
-                        className="bg-primary text-white px-3 py-1 rounded"
-                      >
-                        View / Edit
+                  <tr key={prod.id}>
+                    <td className="py-2">{prod.name}</td>
+                    <td className="py-2">${prod.price}</td>
+                    <td className="py-2 text-gray-500">{prod.subcategory}</td>
+                    <td className="py-2">
+                      <button className="text-xs underline text-gray-500 hover:text-black transition">
+                        Edit
                       </button>
                     </td>
                   </tr>
@@ -162,199 +132,17 @@ const Dashboard = () => {
 
         {/* Create Product Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 overflow-auto">
-            <div className="bg-white w-full max-w-5xl rounded-xl p-6 relative">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="absolute top-3 right-3 text-gray-600 font-bold"
-              >
-                X
+          <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 overflow-auto p-4">
+            <div className="bg-white w-full max-w-3xl rounded-xl p-6 relative">
+              <button onClick={() => setShowCreateModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-black text-xl transition">
+                ✕
               </button>
               <CreateProduct />
-            </div>
-          </div>
-        )}
-
-        {/* Edit Product Modal */}
-        {showEditModal && selectedProduct && (
-          <div className="fixed inset-0 bg-black/50 flex justify-center items-start z-50 overflow-auto pt-10">
-            <div className="bg-white w-full max-w-5xl rounded-xl p-6 relative shadow-lg">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="absolute top-3 right-3 text-gray-600 font-bold text-xl hover:text-red-500"
-              >
-                ✕
-              </button>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Product Image */}
-                <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
-                  <img
-                    src={selectedProduct.image}
-                    alt={selectedProduct.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Product Details */}
-                <div className="flex flex-col">
-                  <h2 className="text-2xl font-bold mb-4">
-                    {selectedProduct.name}
-                  </h2>
-                  <p className="text-gray-600 mb-3">
-                    {selectedProduct.description}
-                  </p>
-                  <p className="text-xl font-semibold mb-2">
-                    ${selectedProduct.price}{" "}
-                    {selectedProduct.discount > 0 && (
-                      <span className="text-sm text-red-500 ml-2">
-                        ({selectedProduct.discount}% off)
-                      </span>
-                    )}
-                  </p>
-
-                  {/* Sizes */}
-                  {selectedProduct.sizes?.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="font-semibold mb-1">Select Size:</h3>
-                      <div className="flex gap-2">
-                        {selectedProduct.sizes.map((size) => (
-                          <button
-                            key={size}
-                            onClick={() => setSelectedSize(size)}
-                            className={`border rounded-md px-3 py-1 text-sm cursor-pointer ${
-                              selectedSize === size
-                                ? "bg-black text-white border-black"
-                                : "hover:bg-gray-100"
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Colors */}
-                  {selectedProduct.colors?.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="font-semibold mb-1">Select Color:</h3>
-                      <div className="flex gap-2">
-                        {selectedProduct.colors.map((color) => (
-                          <button
-                            key={color}
-                            onClick={() => setSelectedColor(color)}
-                            className={`w-7 h-7 rounded-full border-2 cursor-pointer ${
-                              selectedColor === color
-                                ? "border-black scale-110"
-                                : "border-gray-300 hover:scale-105"
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quantity */}
-                  <div className="mb-4 flex items-center gap-3">
-                    <h3 className="font-semibold">Quantity:</h3>
-                    <div className="flex items-center border rounded-md">
-                      <button
-                        className="px-3 py-1"
-                        onClick={() => setQuantity(Math.max(quantity - 1, 1))}
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={quantity}
-                        onChange={(e) =>
-                          setQuantity(
-                            Math.max(parseInt(e.target.value) || 1, 1)
-                          )
-                        }
-                        className="w-16 text-center outline-none px-2 py-1"
-                      />
-                      <button
-                        className="px-3 py-1"
-                        onClick={() => setQuantity(quantity + 1)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Add to Cart */}
-                  <button
-                    onClick={() =>
-                      HandleAddTCart(
-                        selectedProduct,
-                        quantity,
-                        selectedSize,
-                        selectedColor
-                      )
-                    }
-                    className="mt-4 w-full py-3 rounded-md text-white bg-black hover:bg-gray-800"
-                  >
-                    Add to Cart ({cartCount})
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* View All Products Modal */}
-        {showAllProductsModal && (
-          <div className="fixed inset-0 bg-black/50 flex justify-center items-start z-50 overflow-auto pt-10">
-            <div className="bg-white w-full max-w-6xl rounded-xl p-6 relative shadow-lg">
-              <button
-                onClick={() => setShowAllProductsModal(false)}
-                className="absolute top-3 right-3 text-gray-600 font-bold text-xl hover:text-red-500"
-              >
-                ✕
-              </button>
-
-              <h2 className="text-2xl font-bold mb-4">All Products</h2>
-
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border-b p-2">Name</th>
-                    <th className="border-b p-2">Price</th>
-                    <th className="border-b p-2">Category</th>
-                    <th className="border-b p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(filteredProducts || []).map((prod) => (
-                    <tr key={prod.id} className="hover:bg-gray-100">
-                      <td className="p-2">{prod.name}</td>
-                      <td className="p-2">${prod.price}</td>
-                      <td className="p-2">{prod.subcategory}</td>
-                      <td className="p-2">
-                        <button
-                          onClick={() => {
-                            setShowAllProductsModal(false);
-                            openEditModal(prod);
-                          }}
-                          className="bg-primary text-white px-3 py-1 rounded"
-                        >
-                          View / Edit
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
         )}
       </div>
     </Layout>
   );
-};
-
-export default Dashboard;
+}F

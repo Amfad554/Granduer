@@ -1,173 +1,139 @@
-import React from "react";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout/Layout";
 
-// UserDash.jsx — Black & White Theme (No borders except stats)
+const INACTIVITY_LIMIT = 30 * 60 * 1000;
+const SESSION_LIMIT = 24 * 60 * 60 * 1000;
 
 export default function UserDash() {
+  const { isAuthentified, User, logout, cartItems } = useContext(ProductContext);
+  const navigate = useNavigate();
+
+  // Role guard — only regular users
+  useEffect(() => {
+    if (!isAuthentified) { navigate("/login"); return; }
+    if (User?.role === "admin") { navigate("/AdminDash"); }
+  }, [isAuthentified, User, navigate]);
+
+  // Session + inactivity timeout
+  useEffect(() => {
+    if (!isAuthentified) return;
+
+    const checkAndLogout = () => {
+      const now = Date.now();
+      const loginTime = parseInt(localStorage.getItem("loginTime") || "0");
+      const lastActive = parseInt(localStorage.getItem("lastActive") || "0");
+      if (loginTime && now - loginTime > SESSION_LIMIT) { logout("session"); return; }
+      if (lastActive && now - lastActive > INACTIVITY_LIMIT) { logout("inactivity"); }
+    };
+
+    const interval = setInterval(checkAndLogout, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthentified, logout]);
+
   const recentOrders = [
-    {
-      id: "ORD-20251",
-      item: "Nike Air Max",
-      status: "Delivered",
-      amount: "₦45,000",
-    },
-    {
-      id: "ORD-20250",
-      item: "Samsung A14",
-      status: "Processing",
-      amount: "₦120,000",
-    },
-    {
-      id: "ORD-20249",
-      item: "Laptop Bag",
-      status: "Pending",
-      amount: "₦9,500",
-    },
-    {
-      id: "ORD-20248",
-      item: "PS5 Controller",
-      status: "Refunded",
-      amount: "₦28,000",
-    },
+    { id: "ORD-20251", item: "Nike Air Max", status: "Delivered", amount: "₦45,000" },
+    { id: "ORD-20250", item: "Samsung A14", status: "Processing", amount: "₦120,000" },
+    { id: "ORD-20249", item: "Laptop Bag", status: "Pending", amount: "₦9,500" },
   ];
 
-  const savedItems = [
-    { id: 1, item: "Black Hoodie", price: "₦15,000" },
-    { id: 2, item: "Wireless Earbuds", price: "₦19,500" },
-  ];
+  const statusStyle = {
+    Delivered: "bg-green-50 text-green-800",
+    Processing: "bg-yellow-50 text-yellow-800",
+    Pending: "bg-gray-100 text-gray-600",
+    Refunded: "bg-red-50 text-red-700",
+  };
+
+  const initials = `${User?.firstname?.[0] || ""}${User?.lastname?.[0] || ""}`.toUpperCase() || "U";
 
   return (
     <Layout>
-      <div className="min-h-screen bg-white text-black">
-        <div className="max-w-[1400px] mx-auto p-4 md:p-6">
-          {/* Header */}
-          <header className="flex items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <img
-                src="https://i.pravatar.cc/60?img=12"
-                alt="Profile"
-                className="w-12 h-12 rounded-full object-cover"
-              />
-              <div>
-                <h1 className="text-lg font-semibold">Welcome Back</h1>
-                <p className="text-sm text-gray-600">Your dashboard overview</p>
-              </div>
-            </div>
-          </header>
+      <div className="flex min-h-screen bg-gray-50">
 
-          <main className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Sidebar */}
-            <aside className="lg:col-span-1 bg-gray-100 rounded-xl p-4">
-              <nav className="space-y-2">
-                <NavItem label="Dashboard" active />
-                <NavItem label="My Orders" />
-                <NavItem label="Saved Items" />
-                <NavItem label="Addresses" />
-                <NavItem label="Account Settings" />
-              </nav>
-            </aside>
-
-            {/* Main Section */}
-            <section className="lg:col-span-3 space-y-6">
-              {/* Quick Stats */}
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        {/* Sidebar */}
+        <aside className="w-48 bg-black text-white flex flex-col p-4 gap-6 flex-shrink-0">
+          <div className="text-base font-medium tracking-widest pb-4 border-b border-white/10">
+            GRANDEUR
+          </div>
+          <nav className="flex flex-col gap-1">
+            {["Overview", "My orders", "Saved items", "Settings"].map((item, i) => (
+              <button key={item}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm text-left transition ${i === 0 ? "bg-white text-black font-medium" : "text-white/60 hover:bg-white/10 hover:text-white"
+                  }`}
               >
-                <StatCard label="Pending Deliveries" value="3" />
-                <StatCard label="Total Orders" value="18" />
-                <StatCard label="Saved Items" value={savedItems.length} />
-              </motion.div>
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                {item}
+              </button>
+            ))}
+          </nav>
+          <div className="mt-auto">
+            <button onClick={() => logout("manual")}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-white/40 hover:text-white transition w-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              Log out
+            </button>
+          </div>
+        </aside>
 
-              {/* Saved Items */}
-              <div className="bg-gray-100 rounded-xl p-4">
-                <h3 className="text-sm font-medium mb-2">Saved Items</h3>
-                <div className="space-y-2">
-                  {savedItems.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center justify-between py-2 border-b last:border-0 border-gray-300"
-                    >
-                      <div className="text-sm font-medium">{s.item}</div>
-                      <div className="text-sm">{s.price}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {/* Main */}
+        <main className="flex-1 p-6">
 
-              {/* Recent Orders */}
-              <div className="bg-gray-100 rounded-xl p-4 overflow-x-auto">
-                <h3 className="text-sm font-medium mb-3">Recent Orders</h3>
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-300">
-                      <th className="px-3 py-2">Order ID</th>
-                      <th className="px-3 py-2">Item</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.map((r) => (
-                      <tr
-                        key={r.id}
-                        className="border-b border-gray-300 last:border-0"
-                      >
-                        <td className="px-3 py-3 font-medium">{r.id}</td>
-                        <td className="px-3 py-3">{r.item}</td>
-                        <td className="px-3 py-3">{r.status}</td>
-                        <td className="px-3 py-3">{r.amount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* Top bar */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-lg font-medium">Welcome back, {User?.firstname || "User"}</h1>
+              <p className="text-xs text-gray-400 mt-0.5">Your account overview</p>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center text-sm font-medium">
+              {initials}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {[
+              { label: "Total orders", value: recentOrders.length },
+              { label: "Pending delivery", value: recentOrders.filter(o => o.status === "Pending").length },
+              { label: "Cart items", value: cartItems?.length || 0 },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-white border border-gray-200 rounded-lg p-4">
+                <p className="text-xs text-gray-500 mb-1">{label}</p>
+                <p className="text-2xl font-medium">{value}</p>
               </div>
-            </section>
-          </main>
-        </div>
+            ))}
+          </div>
+
+          {/* Orders table */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h2 className="text-sm font-medium mb-3 pb-2 border-b border-gray-100">Recent orders</h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-gray-400">
+                  <th className="text-left pb-2 font-normal">Order</th>
+                  <th className="text-left pb-2 font-normal">Item</th>
+                  <th className="text-left pb-2 font-normal">Amount</th>
+                  <th className="text-left pb-2 font-normal">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {recentOrders.map((o) => (
+                  <tr key={o.id}>
+                    <td className="py-2 text-xs text-gray-500">{o.id}</td>
+                    <td className="py-2">{o.item}</td>
+                    <td className="py-2">{o.amount}</td>
+                    <td className="py-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusStyle[o.status]}`}>
+                        {o.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </main>
       </div>
     </Layout>
-  );
-}
-
-// Sidebar Nav Item
-function NavItem({ label, active }) {
-  return (
-    <button
-      className={`w-full flex items-center justify-between px-3 py-2 rounded-md ${
-        active
-          ? "bg-black text-white font-medium"
-          : "bg-white text-black hover:bg-black hover:text-white transition"
-      }`}
-    >
-      <span className="text-sm">{label}</span>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4 text-gray-500"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M9 5l7 7-7 7"
-        />
-      </svg>
-    </button>
-  );
-}
-
-// Quick Stat Card (keeps black border)
-function StatCard({ label, value }) {
-  return (
-    <div className="bg-white border border-black rounded-xl p-4 text-center">
-      <div className="text-xs text-gray-600">{label}</div>
-      <div className="text-2xl font-semibold mt-1">{value}</div>
-    </div>
   );
 }
