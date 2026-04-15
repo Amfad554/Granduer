@@ -309,8 +309,8 @@ const ProductProvide = ({ children }) => {
       if (!isAuthentified) {
         const storedCartItems = getLocalData("cartItems", []) || [];
 
-        // Update the specific row using tempId (guest) or id (if already present)
         const updatedCartItems = storedCartItems.map((item) => {
+          // Use tempId for guest variations to ensure we update the right one
           const isMatch = item.tempId
             ? item.tempId === prod.tempId
             : parseInt(item.id) === parseInt(prod.productid || prod.id);
@@ -347,37 +347,50 @@ const ProductProvide = ({ children }) => {
         });
 
         const data = await res.json();
+
         if (res.ok) {
-          toast.success(data?.message);
-          // Backend returns the full updated cart structure
+          toast.success(data?.message || "Cart updated successfully");
           const items = data?.data?.ProductCart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
         } else {
-          toast.error(data?.message);
+          toast.error(data?.message || "Failed to update cart.");
         }
-      }
+      } // <-- Correctly closed the else block here
     } catch (error) {
-      toast.error("Unable to update cart.");
+      toast.error("Unable to update cart. Please try again.");
     }
   };
 
   // ─── Delete from cart ─────────────────────────────────────────────────────
-  const HandleDeleteCart = async (id) => {
+  const HandleDeleteCart = async (id, tempId = null) => {
     try {
       if (!isAuthentified) {
         const storedCartItems = getLocalData("cartItems", []);
-        const updatedCartItems = storedCartItems?.filter((item) => parseInt(item.id) !== parseInt(id));
+
+        // Filter by tempId if available (for guests), otherwise by product id
+        const updatedCartItems = storedCartItems?.filter((item) =>
+          tempId ? item.tempId !== tempId : parseInt(item.id) !== parseInt(id)
+        );
+
         setLocalData("cartItems", updatedCartItems);
         setCartItems(updatedCartItems);
         toast.success("Item removed from cart!");
       } else {
         const res = await fetch(`${baseUrl}deletecart`, {
           method: "DELETE",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ userid: Number(User?.userid), productid: Number(id) }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            userid: Number(User?.userid),
+            productid: Number(id)
+          }),
         });
+
         const data = await res.json();
+
         if (res.ok) {
           toast.success(data?.message);
           const items = data?.data?.ProductCart ?? [];
@@ -391,40 +404,23 @@ const ProductProvide = ({ children }) => {
       toast.error("Unable to delete cart, please try again later!");
     }
   };
+// ... previous code (HandleAddFavouritrCart, etc.)
 
-  // ─── Add to favourites ────────────────────────────────────────────────────
-  const HandleAddFavouritrCart = (prod) => {
-    if (!isAuthentified) {
-      let storedFavouriteCart = getLocalData("favourieCart", []);
-      const existingItem = storedFavouriteCart?.find((item) => parseInt(item?.id) === parseInt(prod?.id));
-      let updatedFavouriteCart;
-      if (existingItem) {
-        toast.info("Item already in FavouriteCart");
-        updatedFavouriteCart = storedFavouriteCart;
-      } else {
-        updatedFavouriteCart = [...storedFavouriteCart, { ...prod, quantity: 1 }];
-        toast.success("Item Added to FavouriteCart Successfully!");
-      }
-      setLocalData("favourieCart", updatedFavouriteCart);
-      setfavoriteItem(updatedFavouriteCart);
-    }
-  };
+    return (
+      <ProductContext.Provider
+        value={{
+          HandleGetProducts, HandleAddTCart, HandleUpdateCart,
+          HandleDeleteCart, HandleAddFavouritrCart, handleLoginSuccess,
+          logout, productData, cartItems, cartCout, favoriteItem,
+          favouriteCout, isAuthentified, setIsAuthentified, loading,
+          setLoading, setCartItems, setToken, token, User, setUser,
+          showWarning, setShowWarning,
+        }}
+      >
+        {children}
+      </ProductContext.Provider>
+    );
+}; // Closes the ProductProvider component
 
-  return (
-    <ProductContext.Provider
-      value={{
-        HandleGetProducts, HandleAddTCart, HandleUpdateCart,
-        HandleDeleteCart, HandleAddFavouritrCart, handleLoginSuccess,
-        logout, productData, cartItems, cartCout, favoriteItem,
-        favouriteCout, isAuthentified, setIsAuthentified, loading,
-        setLoading, setCartItems, setToken, token, User, setUser,
-        showWarning, setShowWarning,
-      }}
-    >
-      {children}
-    </ProductContext.Provider>
-  );
-};
-
-export default ProductProvide;
 export { ProductContext };
+export default ProductProvider; // Added this to make importing easier

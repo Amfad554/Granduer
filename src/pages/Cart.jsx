@@ -340,7 +340,8 @@ const Cart = () => {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          HandleDeleteCart(item?.productid || item?.id);
+                          // ✅ Pass both ID and tempId so the filter knows exactly which row to remove
+                          HandleDeleteCart(item?.productid || item?.id, item?.tempId);
                         }}
                         className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200"
                       >
