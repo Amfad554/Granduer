@@ -9,13 +9,9 @@ const Men = () => {
   const [menProducts, setMenProducts] = useState([]);
 
   useEffect(() => {
-    if (!productData) {
-      HandleGetProducts();
-      return;
-    }
-    const filtered = productData.filter((product) => product.category === "men");
-    setMenProducts(filtered);
-  }, [productData, HandleGetProducts]);
+    if (!productData) return;
+    setMenProducts(productData.filter(p => p.category === "men"));
+  }, [productData]);
 
   if (!productData) {
     return (

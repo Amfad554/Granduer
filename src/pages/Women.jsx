@@ -13,14 +13,9 @@ const Women = () => {
 
   // ✅ Same pattern as NewArrivals — only fetch if no data
   useEffect(() => {
-    if (!productData) {
-      HandleGetProducts();
-      return;
-    }
-    const filtered = productData.filter((product) => product.category === "women");
-    setWomenProducts(filtered);
-  }, [productData, HandleGetProducts]);
-
+  if (!productData) return;
+  setWomenProducts(productData.filter(p => p.category === "women"));
+}, [productData]);
   // ✅ Loading state like NewArrivals
   if (!productData) {
     return (

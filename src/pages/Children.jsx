@@ -8,15 +8,10 @@ const Children = () => {
   const { productData, HandleGetProducts, HandleAddTCart } = useContext(ProductContext);
   const [childrenProducts, setChildrenProducts] = useState([]);
 
-  useEffect(() => {
-    if (!productData) {
-      HandleGetProducts();
-      return;
-    }
-    const filtered = productData.filter((product) => product.category === "children");
-    setChildrenProducts(filtered);
-  }, [productData, HandleGetProducts]);
-
+ useEffect(() => {
+  if (!productData) return;
+  setChildrenProducts(productData.filter(p => p.category === "children"));
+}, [productData]);
   if (!productData) {
     return (
       <Layout>

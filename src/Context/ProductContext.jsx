@@ -205,7 +205,8 @@ const ProductProvide = ({ children }) => {
   }, [isAuthentified, token, User?.userid]);
 
   // ─── Get all products ─────────────────────────────────────────────────────
-  const HandleGetProducts = async () => {
+  // ProductContext.jsx - replace your current HandleGetProducts
+  const HandleGetProducts = useCallback(async () => {
     try {
       const res = await fetch(`${baseUrl}getAllProduct`, { method: "GET" });
       const data = await res.json();
@@ -216,7 +217,7 @@ const ProductProvide = ({ children }) => {
     } catch (error) {
       console.log(error);
     }
-  };
+  }, []);
 
   useEffect(() => { HandleGetProducts(); }, []);
 
