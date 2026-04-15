@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import PulseLoader from "react-spinners/PulseLoader";
 import { FaEye, FaEyeSlash, FaSignInAlt, FaUser, FaTools } from "react-icons/fa";
 import Layout from "../Shared/Layout/Layout";
@@ -13,12 +13,17 @@ const UserLoginPage = () => {
     cartItems,
     setCartItems,
     handleLoginSuccess,
-    User, // ✅ needed for role-based redirect
+    User,
   } = useContext(ProductContext);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [isLogin, setIsLogin] = useState(true);
+  // ─── Read state passed from navigate() ────────────────────────────────────
+  const redirectMessage = location.state?.message;         // deleted account message
+  const defaultTab = location.state?.defaultTab;           // "register" from cart checkout
+
+  const [isLogin, setIsLogin] = useState(defaultTab !== "register"); // open register tab if requested
   const [isReset, setIsReset] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -65,7 +70,10 @@ const UserLoginPage = () => {
   };
 
   const resetInputs = () => {
-    setInputs({ email: "", password: "", firstname: "", lastname: "", phone: "", address: "", confirmpassword: "", rememberMe: false, image: null });
+    setInputs({
+      email: "", password: "", firstname: "", lastname: "",
+      phone: "", address: "", confirmpassword: "", rememberMe: false, image: null,
+    });
     setPreview(null);
     setErrors({});
   };
@@ -105,7 +113,6 @@ const UserLoginPage = () => {
           setCartItems([]);
           localStorage.removeItem("cartItems");
 
-          // ✅ Role-based redirect immediately after login
           if (res.decoded?.role === "admin") {
             navigate("/AdminDash");
           } else {
@@ -146,6 +153,13 @@ const UserLoginPage = () => {
         )}
 
         <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+
+          {/* ── Redirect message banner (deleted account or checkout gate) ── */}
+          {redirectMessage && (
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 text-sm px-4 py-3">
+              ⚠️ {redirectMessage}
+            </div>
+          )}
 
           {!isReset && (
             <div className="flex">

@@ -6,10 +6,13 @@ import { ImCancelCircle } from "react-icons/im";
 import Edit from "../Context/Edit";
 import { baseUrl } from "../App";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const Cart = () => {
-  const { cartItems, cartCout, HandleDeleteCart, token, User } =
+  const { cartItems, cartCout, HandleDeleteCart, token, User, isAuthentified } =
     useContext(ProductContext);
+
+  const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [prod, setProd] = useState(null);
@@ -17,8 +20,8 @@ const Cart = () => {
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [showLoginGate, setShowLoginGate] = useState(false); // ← login gate modal
 
-  // ✅ Sync prod with selected size/color/quantity
   useEffect(() => {
     if (selectedSize) setProd((prev) => ({ ...prev, size: selectedSize }));
   }, [selectedSize]);
@@ -32,11 +35,10 @@ const Cart = () => {
   }, [quantity]);
 
   useEffect(() => {
-    document.body.style.overflow = isModalOpen ? "hidden" : "unset";
+    document.body.style.overflow = isModalOpen || showLoginGate ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
-  }, [isModalOpen]);
+  }, [isModalOpen, showLoginGate]);
 
-  // ✅ Handle both local (flat) and server (nested under Product capital P) structures
   const getPrice = (item) => Number(item?.price ?? item?.Product?.price ?? 0);
   const getQty = (item) => Number(item?.quantity ?? 0);
   const getName = (item) => item?.name ?? item?.Product?.name ?? "";
@@ -45,7 +47,6 @@ const Cart = () => {
   const cartTotal = (items) =>
     items.reduce((sum, item) => sum + getPrice(item) * getQty(item), 0).toFixed(2);
 
-  // ✅ Open modal and initialize quantity from the item
   const handleOpenEdit = (item) => {
     setProd(item);
     setQuantity(item?.quantity ?? 1);
@@ -54,9 +55,16 @@ const Cart = () => {
     setIsModalOpen(true);
   };
 
-  const HandleInitializePayment = async (e) => {
-    e.preventDefault();
+  // ─── Checkout: gate behind login ──────────────────────────────────────────
+  const handleCheckoutClick = () => {
+    if (!isAuthentified) {
+      setShowLoginGate(true); // show login prompt instead of proceeding
+      return;
+    }
+    HandleInitializePayment();
+  };
 
+  const HandleInitializePayment = async () => {
     if (!User || !User.email) {
       toast.error("Please login to proceed with payment");
       return;
@@ -114,10 +122,65 @@ const Cart = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 md:px-10 relative">
+
+        {/* ── Processing overlay ── */}
         {isLoading && (
           <div className="fixed inset-0 z-50 flex justify-center items-center bg-white bg-opacity-75">
             <div className="flex flex-col items-center">
               <p className="text-black mt-2 font-semibold">Processing...</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Login Gate Modal ── */}
+        {showLoginGate && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowLoginGate(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 flex flex-col gap-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">Sign in to checkout</h2>
+                <button
+                  onClick={() => setShowLoginGate(false)}
+                  className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-all"
+                >
+                  <ImCancelCircle className="h-5 w-5" />
+                </button>
+              </div>
+
+              <p className="text-gray-600 text-sm leading-relaxed">
+                Your cart items are saved. Please sign in or create an account to complete your purchase.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    setShowLoginGate(false);
+                    navigate("/login");
+                  }}
+                  className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLoginGate(false);
+                    // navigate to login page with signup tab open
+                    navigate("/login", { state: { defaultTab: "register" } });
+                  }}
+                  className="w-full border-2 border-black text-black py-3 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Create Account
+                </button>
+              </div>
+
+              <p className="text-center text-xs text-gray-400">
+                Your cart will be waiting for you after login.
+              </p>
             </div>
           </div>
         )}
@@ -130,7 +193,7 @@ const Cart = () => {
             {cartCout} {cartCout === 1 ? "item" : "items"} in your shopping cart
           </p>
 
-          {/* Edit Modal */}
+          {/* ── Edit Modal ── */}
           <div
             className={`${isModalOpen ? "" : "hidden"} fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm`}
             onClick={() => setIsModalOpen(false)}
@@ -148,7 +211,6 @@ const Cart = () => {
                 </button>
               </div>
               <div className="p-4 sm:p-6">
-                {/* ✅ Pass all needed props including close modal callback */}
                 <Edit
                   prod={prod}
                   setSelectedSize={setSelectedSize}
@@ -166,7 +228,7 @@ const Cart = () => {
           {cartItems && cartItems.length > 0 ? (
             <div className="space-y-8">
 
-              {/* Desktop Table */}
+              {/* ── Desktop Table ── */}
               <div className="hidden md:block bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
                 <table className="min-w-full">
                   <thead className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-200">
@@ -195,9 +257,7 @@ const Cart = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="py-4 px-5 text-gray-700 font-medium">
-                          ${getPrice(item)}
-                        </td>
+                        <td className="py-4 px-5 text-gray-700 font-medium">${getPrice(item)}</td>
                         <td className="py-4 px-5">
                           <span className="inline-flex items-center justify-center bg-gray-100 text-gray-800 font-semibold px-3 py-1.5 rounded-lg min-w-[50px] text-sm">
                             {item?.quantity}
@@ -233,7 +293,7 @@ const Cart = () => {
                 </table>
               </div>
 
-              {/* Mobile Cards */}
+              {/* ── Mobile Cards ── */}
               <div className="space-y-4 md:hidden">
                 {cartItems.map((item, index) => (
                   <div
@@ -249,12 +309,8 @@ const Cart = () => {
                         />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-lg text-gray-900 mb-1">
-                          {getName(item)}
-                        </h3>
-                        <p className="text-gray-600 font-semibold text-lg">
-                          ${getPrice(item)}
-                        </p>
+                        <h3 className="font-bold text-lg text-gray-900 mb-1">{getName(item)}</h3>
+                        <p className="text-gray-600 font-semibold text-lg">${getPrice(item)}</p>
                       </div>
                     </div>
 
@@ -296,7 +352,7 @@ const Cart = () => {
                 ))}
               </div>
 
-              {/* Order Summary */}
+              {/* ── Order Summary ── */}
               <div className="flex justify-end">
                 <div className="bg-white p-8 rounded-2xl w-full sm:w-2/3 md:w-1/2 lg:w-1/3 shadow-xl border border-gray-200">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-200">
@@ -318,26 +374,33 @@ const Cart = () => {
                       <span className="text-2xl font-bold text-gray-900">${cartTotal(cartItems)}</span>
                     </div>
                   </div>
+
+                  {/* ── Checkout button — shows lock hint for guests ── */}
                   <button
-                    onClick={HandleInitializePayment}
+                    onClick={handleCheckoutClick}
                     disabled={isLoading || cartItems.length === 0}
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 
                       ${isLoading || cartItems.length === 0
-                        ? "bg-gray-400 cursor-not-allowed"
+                        ? "bg-gray-400 cursor-not-allowed text-white"
                         : "bg-black text-white hover:bg-gray-800 hover:shadow-2xl hover:scale-[1.02]"
                       }`}
                   >
                     {isLoading ? "Processing..." : "Proceed to Checkout"}
                   </button>
+
+                  {/* ── Hint for guests ── */}
+                  {!isAuthentified && (
+                    <p className="text-center text-xs text-gray-400 mt-3">
+                      🔒 You'll be asked to sign in before payment
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center mt-20 bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto border border-gray-200">
               <div className="text-6xl mb-6">🛒</div>
-              <p className="text-2xl font-semibold text-gray-800 mb-2">
-                Your cart is empty
-              </p>
+              <p className="text-2xl font-semibold text-gray-800 mb-2">Your cart is empty</p>
               <p className="text-gray-600 mb-8 text-center">
                 Looks like you haven't added any items yet
               </p>
@@ -354,6 +417,5 @@ const Cart = () => {
     </Layout>
   );
 };
-
 
 export default Cart;
