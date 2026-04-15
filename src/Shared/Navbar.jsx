@@ -6,7 +6,7 @@ import { Link, NavLink } from "react-router-dom";
 import { ProductContext } from "../Context/ProductContext";
 
 const Navbar = () => {
-  const { cartCout, isAuthentified, showWarning, setShowWarning } = useContext(ProductContext);
+  const { cartCout, isAuthentified, showWarning, setShowWarning, User } = useContext(ProductContext);
 
   const [isMenuOpen, setIsmenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -91,7 +91,7 @@ const Navbar = () => {
             )}
 
             <NavLink
-              to={isAuthentified ? "/dashboard" : "/login"}
+              to={isAuthentified ? (User?.role === "admin" ? "/AdminDash" : "/userDash") : "/login"}
               className="border border-white bg-black p-2 rounded-3xl hover:bg-white hover:text-black transition cursor-pointer"
             >
               {isAuthentified ? <FaTachometerAlt /> : <FaUser />}
@@ -157,7 +157,7 @@ const Navbar = () => {
 
           <div className="flex items-center gap-4">
             <Link
-              to={isAuthentified ? "/dashboard" : "/login"}
+              to={isAuthentified ? (User?.role === "admin" ? "/AdminDash" : "/userDash") : "/login"}
               className="p-4 text-white text-3xl"
             >
               {isAuthentified ? <FaTachometerAlt /> : <FaUser />}
@@ -175,8 +175,8 @@ const Navbar = () => {
         {/* Mobile Menu */}
         <div
           className={`${isMenuOpen
-              ? "max-h-[2000px] opacity-100 block transition duration-500"
-              : "max-h-0 opacity-0 hidden transition-all duration-500"
+            ? "max-h-[2000px] opacity-100 block transition duration-500"
+            : "max-h-0 opacity-0 hidden transition-all duration-500"
             } absolute left-0 w-full bg-white text-black`}
         >
           <div className="flex flex-col items-center gap-4 p-4">
