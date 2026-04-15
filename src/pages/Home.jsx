@@ -96,9 +96,10 @@ const Home = () => {
             slidesPerGroup={1}
             modules={[Autoplay]}
             breakpoints={{
-              640: { slidesPerView: Math.min(1, productData?.length || 1) },
+              640: { slidesPerView: Math.min(2, productData?.length || 1) },
               768: { slidesPerView: Math.min(3, productData?.length || 1) },
               1024: { slidesPerView: Math.min(5, productData?.length || 1) },
+              1280: { slidesPerView: Math.min(6, productData?.length || 1) },
             }}
             className="w-full h-72 lg:h-72 xl:h-96 flex flex-col justify-center items-center"
           >
