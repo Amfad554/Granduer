@@ -38,15 +38,16 @@ const Edit = ({
 
   const handleUpdate = (e) => {
     e.preventDefault();
-    // ✅ Pass the full updated payload — HandleUpdateCart reads productid from this
+
     HandleUpdateCart({
-      productid: prod?.productid ?? prod?.id,
+      // We send the ID of the specific cart record to the server
+      cartItemId: prod?.id,
+      productid: product?.id,
       size: selectedSize,
       color: selectedColor,
-      quantity,
-      // keep original nested Product reference so cart UI can still read it
-      Product: prod?.Product,
+      quantity: quantity,
     });
+
     onClose();
   };
 

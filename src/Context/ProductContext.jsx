@@ -236,32 +236,56 @@ const ProductProvide = ({ children }) => {
   // ─── Add to cart ──────────────────────────────────────────────────────────
   const HandleAddTCart = async (prod, quantity = 1, size = null, color = null) => {
     if (!isAuthentified) {
-      let storedCartItems = getLocalData("cartItems", []);
-      const existingItem = storedCartItems.find((item) => parseInt(item.id) === parseInt(prod.id));
+      let storedCartItems = getLocalData("cartItems", []) || [];
+
+      // Check if the exact variation already exists in the guest cart
+      const existingIndex = storedCartItems.findIndex(
+        (item) =>
+          parseInt(item.id) === parseInt(prod.id) &&
+          item.size === size &&
+          item.color === color
+      );
+
       let updatedCartItems;
-      if (existingItem) {
-        updatedCartItems = storedCartItems.map((item) =>
-          parseInt(item.id) === parseInt(prod.id)
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-        toast.info("Existing item quantity added to cart Successfully!");
+      if (existingIndex !== -1) {
+        // Variation exists: Update quantity
+        updatedCartItems = [...storedCartItems];
+        updatedCartItems[existingIndex] = {
+          ...updatedCartItems[existingIndex],
+          quantity: updatedCartItems[existingIndex].quantity + quantity,
+        };
+        toast.info("Quantity updated in cart!");
       } else {
-        updatedCartItems = [...storedCartItems, { ...prod, quantity, size, color }];
-        toast.success("Item Added to cart Successfully!");
+        // New variation: Add new entry with a unique tempId for editing later
+        const newItem = {
+          ...prod,
+          tempId: Date.now() + Math.random(), // Unique ID for guest row
+          quantity,
+          size,
+          color
+        };
+        updatedCartItems = [...storedCartItems, newItem];
+        toast.success("Item added to cart!");
       }
+
       setLocalData("cartItems", updatedCartItems);
       setCartItems(updatedCartItems);
     } else {
+      // Authenticated User logic
       try {
         const payload = {
           userid: Number(User?.userid),
           productid: Number(prod?.id),
-          color, size, quantity,
+          color,
+          size,
+          quantity,
         };
         const res = await fetch(`${baseUrl}addcart`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -274,7 +298,7 @@ const ProductProvide = ({ children }) => {
           toast.error(data?.message);
         }
       } catch (error) {
-        toast.error("Unable to add to cart, please try again later!");
+        toast.error("Unable to add to cart. Please try again.");
       }
     }
   };
@@ -283,30 +307,49 @@ const ProductProvide = ({ children }) => {
   const HandleUpdateCart = async (prod) => {
     try {
       if (!isAuthentified) {
-        const storedCartItems = getLocalData("cartItems", []);
-        const existingItem = storedCartItems.find((item) => parseInt(item?.id) === parseInt(prod?.id));
-        if (!existingItem) { toast.error("Item does not exist in cart!"); return; }
-        const updatedCartItems = storedCartItems.map((item) =>
-          parseInt(item?.id) === parseInt(prod?.id)
-            ? { ...item, size: prod?.size ?? item?.size, color: prod?.color ?? item?.color, quantity: prod?.quantity ?? item?.quantity }
-            : item
-        );
+        const storedCartItems = getLocalData("cartItems", []) || [];
+
+        // Update the specific row using tempId (guest) or id (if already present)
+        const updatedCartItems = storedCartItems.map((item) => {
+          const isMatch = item.tempId
+            ? item.tempId === prod.tempId
+            : parseInt(item.id) === parseInt(prod.productid || prod.id);
+
+          if (isMatch) {
+            return {
+              ...item,
+              size: prod.size ?? item.size,
+              color: prod.color ?? item.color,
+              quantity: prod.quantity ?? item.quantity,
+            };
+          }
+          return item;
+        });
+
         setLocalData("cartItems", updatedCartItems);
         setCartItems(updatedCartItems);
-        toast.success("Item Updated Successfully!");
+        toast.success("Cart updated successfully!");
       } else {
+        // Authenticated User logic
         const res = await fetch(`${baseUrl}updatecart`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({
             userid: Number(User?.userid),
-            productid: Number(prod?.product?.id || prod?.productid),
-            color: prod?.color, size: prod?.size, quantity: prod?.quantity,
+            productid: Number(prod?.product?.id || prod?.productid || prod?.id),
+            color: prod?.color,
+            size: prod?.size,
+            quantity: prod?.quantity,
           }),
         });
+
         const data = await res.json();
         if (res.ok) {
           toast.success(data?.message);
+          // Backend returns the full updated cart structure
           const items = data?.data?.ProductCart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
@@ -315,7 +358,7 @@ const ProductProvide = ({ children }) => {
         }
       }
     } catch (error) {
-      toast.error("Unable to update cart, please try again later!");
+      toast.error("Unable to update cart.");
     }
   };
 
