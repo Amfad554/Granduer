@@ -11,14 +11,11 @@ import Men from "./pages/Men.jsx";
 import Children from "./pages/Children.jsx";
 import NewArrivals from "./pages/NewArrivals.jsx";
 import Cart from "./pages/Cart.jsx";
-import ProductProvider from "./Context/ProductContext.jsx";
 import SingleProduct from "./pages/SingleProduct.jsx";
-
 import UserLoginPage from "./pages/UserLogin.jsx";
 import AdminDash from "./Dashboard/AdminDash.jsx";
 import UserDash from "./Dashboard/userDash.jsx";
 import ThankYouPage from "./pages/ThankYouPage.jsx";
-// Change this line in main.jsx
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 
 const router = createBrowserRouter([
@@ -26,67 +23,26 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
-      {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: "/about",
-        element: <About />,
-      },
-      {
-        path: "/contact",
-        element: <Contact />,
-      },
-      {
-        path: "/women",
-        element: <Women />,
-      },
-      {
-        path: "/men",
-        element: <Men />,
-      },
-      {
-        path: "/children",
-        element: <Children />,
-      },
-      {
-        path: "/newarrivals",
-        element: <NewArrivals />,
-      },
-      {
-        path: "/cart",
-        element: <Cart />,
-      },
-      {
-        path: "/product/:id",
-        element: <SingleProduct />,
-      },
-      {
-        path: "/login",
-        element: <UserLoginPage />,
-      },
-      {
-        path: "/AdminDash",
-        element: <AdminDash />,
-      },
-      {
-        path: "/userDash",
-        element: <UserDash />,
-      },
-      {
-        path: "/thankyou",
-        element: <ThankYouPage />,
-      },
-      {
-        path: "/verifyemail/:token",
-        element: <VerifyEmail />,
-      },
+      { index: true, element: <Home /> },
+      { path: "/about", element: <About /> },
+      { path: "/contact", element: <Contact /> },
+      { path: "/women", element: <Women /> },
+      { path: "/men", element: <Men /> },
+      { path: "/children", element: <Children /> },
+      { path: "/newarrivals", element: <NewArrivals /> },
+      { path: "/cart", element: <Cart /> },
+      { path: "/product/:id", element: <SingleProduct /> },
+      { path: "/login", element: <UserLoginPage /> },
+      { path: "/AdminDash", element: <AdminDash /> },
+      { path: "/userDash", element: <UserDash /> },
+      { path: "/thankyou", element: <ThankYouPage /> },
+      { path: "/verifyemail/:token", element: <VerifyEmail /> },
     ],
   },
 ]);
+
 createRoot(document.getElementById("root")).render(
-    <StrictMode>
-      <RouterProvider router={router} />
-    </StrictMode>
+  <StrictMode>
+    <RouterProvider router={router} />
+  </StrictMode>
 );
