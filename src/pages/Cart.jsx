@@ -7,6 +7,7 @@ import Edit from "../Context/Edit";
 import { baseUrl } from "../App";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const Cart = () => {
   const { cartItems, cartCout, HandleDeleteCart, token, User, isAuthentified } =
