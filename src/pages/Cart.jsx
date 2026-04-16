@@ -22,15 +22,19 @@ const Cart = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showLoginGate, setShowLoginGate] = useState(false);
 
-  // FIX: Removed the three useEffects that were syncing selectedSize/selectedColor/quantity
-  // back into `prod`. Those effects ran immediately on mount and on every state change,
-  // which could overwrite prod with a plain object and lose nested Product data.
-  // Edit.jsx reads selectedSize/selectedColor/quantity directly as props — no sync needed.
-
   useEffect(() => {
     document.body.style.overflow = isModalOpen || showLoginGate ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
   }, [isModalOpen, showLoginGate]);
+
+  // ── Auto-trigger payment if user just logged in from checkout gate ──
+  useEffect(() => {
+    const pendingCheckout = localStorage.getItem("pendingCheckout");
+    if (isAuthentified && User?.email && pendingCheckout === "true") {
+      localStorage.removeItem("pendingCheckout");
+      HandleInitializePayment();
+    }
+  }, [isAuthentified, User?.email]);
 
   const getPrice = (item) => Number(item?.price ?? item?.Product?.price ?? 0);
   const getQty = (item) => Number(item?.quantity ?? 0);
@@ -48,10 +52,12 @@ const Cart = () => {
     setIsModalOpen(true);
   };
 
-  // ─── Checkout: gate behind login ──────────────────────────────────────────
+  // ── Checkout: save flag + navigate directly to login ──────────────────────
   const handleCheckoutClick = () => {
     if (!isAuthentified) {
-      setShowLoginGate(true);
+      localStorage.setItem("pendingCheckout", "true");
+      setShowLoginGate(false);
+      navigate("/login");
       return;
     }
     HandleInitializePayment();
@@ -151,16 +157,14 @@ const Cart = () => {
 
               <div className="flex flex-col gap-3">
                 <button
-                  onClick={() => {
-                    setShowLoginGate(false);
-                    navigate("/login");
-                  }}
+                  onClick={handleCheckoutClick}
                   className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all"
                 >
                   Sign In
                 </button>
                 <button
                   onClick={() => {
+                    localStorage.setItem("pendingCheckout", "true");
                     setShowLoginGate(false);
                     navigate("/login", { state: { defaultTab: "register" } });
                   }}
@@ -270,7 +274,6 @@ const Cart = () => {
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
-                                // FIX: Pass tempId for desktop delete too (was missing before)
                                 HandleDeleteCart(item?.productid || item?.id, item?.tempId);
                               }}
                               title="Delete"
@@ -367,7 +370,6 @@ const Cart = () => {
                       <span className="text-2xl font-bold text-gray-900">${cartTotal(cartItems)}</span>
                     </div>
                   </div>
-
                   <button
                     onClick={handleCheckoutClick}
                     disabled={isLoading || cartItems.length === 0}
@@ -395,17 +397,18 @@ const Cart = () => {
               <p className="text-gray-600 mb-8 text-center">
                 Looks like you haven't added any items yet
               </p>
-              <a
-                href="/"
+
+              <Link
+                to="/"
                 className="bg-black text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               >
                 Continue Shopping
-              </a>
+              </Link>
             </div>
           )}
         </div>
       </div>
-    </Layout>
+    </Layout >
   );
 };
 

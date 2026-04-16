@@ -113,11 +113,17 @@ const UserLoginPage = () => {
           setCartItems([]);
           localStorage.removeItem("cartItems");
 
-          if (res.decoded?.role === "admin") {
+          // ── CHECK for pending checkout first ──────────────────────
+          const pendingCheckout = localStorage.getItem("pendingCheckout");
+          if (pendingCheckout === "true") {
+            // Don't remove flag here — let Cart.jsx's useEffect handle it
+            navigate("/cart");
+          } else if (res.decoded?.role === "admin") {
             navigate("/AdminDash");
           } else {
             navigate("/userDash");
           }
+          // ──────────────────────────────────────────────────────────
         } else {
           toast.error(res?.data?.message || res.error);
         }
