@@ -7,6 +7,10 @@ import { ProductContext } from "../Context/ProductContext";
 import { toast } from "react-toastify";
 import { loginUser, regUser } from "../services/userService";
 
+import { baseUrl } from "../App";
+
+
+
 const UserLoginPage = () => {
   const {
     isAuthentified,
@@ -41,6 +45,9 @@ const UserLoginPage = () => {
   // ─── Redirect if already logged in — role-based ───────────────────────────
   useEffect(() => {
     if (isAuthentified && User?.role) {
+      // Don't redirect if we're mid-checkout — handleSubmit will navigate
+      if (localStorage.getItem("pendingCheckout") === "true") return;
+
       if (User.role === "admin") {
         navigate("/AdminDash");
       } else {
@@ -49,6 +56,31 @@ const UserLoginPage = () => {
     }
   }, [isAuthentified, User, navigate]);
 
+
+  const syncGuestCartToServer = async (guestCart, userData, userToken) => {
+    try {
+      await Promise.all(
+        guestCart.map((item) =>
+          fetch(`${baseUrl}addcart`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${userToken}`,
+            },
+            body: JSON.stringify({
+              userid: Number(userData?.userid),
+              productid: Number(item?.id ?? item?.productid),
+              color: item?.color ?? item?.selectedcolor ?? null,
+              size: item?.size ?? item?.selectedsize ?? null,
+              quantity: Number(item?.quantity ?? 1),
+            }),
+          })
+        )
+      );
+    } catch (err) {
+      console.error("Guest cart sync failed:", err);
+    }
+  };
   // ─── Input handlers ───────────────────────────────────────────────────────
   const handleInputChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -109,21 +141,31 @@ const UserLoginPage = () => {
         const res = await loginUser(logData, cartItems);
         if (res.ok) {
           toast.success(res?.data?.message);
+
+          // 1. Grab guest cart BEFORE clearing anything
+          const guestCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
+
+          // 2. Log the user in
           handleLoginSuccess(res.decoded, res.token);
+
+          // 3. If there were guest items, sync them to server
+          if (guestCart.length > 0) {
+            await syncGuestCartToServer(guestCart, res.decoded, res.token);
+          }
+
+          // 4. Clear local guest cart only after sync
           setCartItems([]);
           localStorage.removeItem("cartItems");
 
-          // ── CHECK for pending checkout first ──────────────────────
+          // 5. Handle pending checkout
           const pendingCheckout = localStorage.getItem("pendingCheckout");
           if (pendingCheckout === "true") {
-            // Don't remove flag here — let Cart.jsx's useEffect handle it
-            navigate("/cart");
+            navigate("/cart");   // Cart.jsx useEffect will trigger payment
           } else if (res.decoded?.role === "admin") {
             navigate("/AdminDash");
           } else {
             navigate("/userDash");
           }
-          // ──────────────────────────────────────────────────────────
         } else {
           toast.error(res?.data?.message || res.error);
         }

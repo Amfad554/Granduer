@@ -180,6 +180,7 @@ const ProductProvider = ({ children }) => {
   }, [favoriteItem]);
 
   // ─── Fetch server cart on login ───────────────────────────────────────────
+  // ─── Fetch server cart on login ───────────────────────────────────────────
   useEffect(() => {
     const fetchUserCart = async () => {
       if (isAuthentified && token && User?.userid) {
@@ -191,10 +192,15 @@ const ProductProvider = ({ children }) => {
           const data = await res.json();
           if (res.ok) {
             const items = data?.data?.ProductCart ?? [];
+
+            // ✅ Only update cart if server actually has items
+            // Don't overwrite a guest cart that's mid-sync
             if (items.length > 0) {
               setCartItems(items);
               setLocalData("cartItems", items);
             }
+            // If server returns empty, keep whatever is already in state
+            // (guest items may be syncing right now in UserLoginPage)
           }
         } catch (error) {
           console.error("Failed to fetch server cart:", error);

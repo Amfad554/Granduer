@@ -28,13 +28,18 @@ const Cart = () => {
   }, [isModalOpen, showLoginGate]);
 
   // ── Auto-trigger payment if user just logged in from checkout gate ──
-  useEffect(() => {
-    const pendingCheckout = localStorage.getItem("pendingCheckout");
-    if (isAuthentified && User?.email && pendingCheckout === "true") {
-      localStorage.removeItem("pendingCheckout");
+// ── Auto-trigger payment if user just logged in from checkout gate ──
+useEffect(() => {
+  const pendingCheckout = localStorage.getItem("pendingCheckout");
+  if (isAuthentified && User?.email && pendingCheckout === "true") {
+    localStorage.removeItem("pendingCheckout");
+
+    // ✅ Small delay to let server cart load before charging
+    setTimeout(() => {
       HandleInitializePayment();
-    }
-  }, [isAuthentified, User?.email]);
+    }, 1500);
+  }
+}, [isAuthentified, User?.email]);
 
   const getPrice = (item) => Number(item?.price ?? item?.Product?.price ?? 0);
   const getQty = (item) => Number(item?.quantity ?? 0);
