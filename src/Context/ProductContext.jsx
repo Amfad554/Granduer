@@ -339,6 +339,7 @@ const ProductProvider = ({ children }) => {
           },
           body: JSON.stringify({
             userid: Number(User?.userid),
+            cartItemId: Number(prod?.cartItemId),  // ✅ add this
             productid: Number(prod?.product?.id || prod?.productid || prod?.id),
             color: prod?.color,
             size: prod?.size,
