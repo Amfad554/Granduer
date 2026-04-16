@@ -13,7 +13,8 @@ const Edit = ({
 }) => {
   const { HandleUpdateCart } = useContext(ProductContext);
 
-  // ✅ Capital P — server returns Product not product
+  // prod is a ProductCart row — prod.id is the ProductCart row's primary key
+  // prod.Product is the joined product data from the server
   const product = prod?.Product || prod;
 
   const name = product?.name ?? "";
@@ -28,7 +29,7 @@ const Edit = ({
   const rating = product?.rating ?? prod?.rating ?? "";
   const bestSeller = product?.bestSeller ?? prod?.bestSeller ?? false;
 
-  // ✅ Initialize size/color from saved cart item values on open
+  // Initialize size/color/quantity from the saved cart row when the modal opens
   useEffect(() => {
     setSelectedSize(prod?.selectedsize ?? prod?.size ?? sizes[0] ?? "");
     setSelectedColor(prod?.selectedcolor ?? prod?.color ?? colors[0] ?? "");
@@ -39,10 +40,11 @@ const Edit = ({
   const handleUpdate = (e) => {
     e.preventDefault();
 
+    console.log("Sending update — cartItemId:", prod?.id, "product:", product?.id);
+
     HandleUpdateCart({
-      // We send the ID of the specific cart record to the server
-      cartItemId: prod?.id,
-      productid: product?.id,
+      cartItemId: prod?.id,       // ✅ ProductCart row primary key — used by backend to find the exact row
+      productid: product?.id,     // product reference (kept for guest fallback)
       size: selectedSize,
       color: selectedColor,
       quantity: quantity,

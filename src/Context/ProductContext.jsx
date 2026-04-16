@@ -205,7 +205,6 @@ const ProductProvider = ({ children }) => {
   }, [isAuthentified, token, User?.userid]);
 
   // ─── Get all products ─────────────────────────────────────────────────────
-  // ProductContext.jsx - replace your current HandleGetProducts
   const HandleGetProducts = useCallback(async () => {
     try {
       const res = await fetch(`${baseUrl}getAllProduct`, { method: "GET" });
@@ -238,7 +237,6 @@ const ProductProvider = ({ children }) => {
     if (!isAuthentified) {
       let storedCartItems = getLocalData("cartItems", []) || [];
 
-      // Check if the exact variation already exists in the guest cart
       const existingIndex = storedCartItems.findIndex(
         (item) =>
           parseInt(item.id) === parseInt(prod.id) &&
@@ -248,7 +246,6 @@ const ProductProvider = ({ children }) => {
 
       let updatedCartItems;
       if (existingIndex !== -1) {
-        // Variation exists: Update quantity
         updatedCartItems = [...storedCartItems];
         updatedCartItems[existingIndex] = {
           ...updatedCartItems[existingIndex],
@@ -256,13 +253,12 @@ const ProductProvider = ({ children }) => {
         };
         toast.info("Quantity updated in cart!");
       } else {
-        // New variation: Add new entry with a unique tempId for editing later
         const newItem = {
           ...prod,
-          tempId: Date.now() + Math.random(), // Unique ID for guest row
+          tempId: Date.now() + Math.random(),
           quantity,
           size,
-          color
+          color,
         };
         updatedCartItems = [...storedCartItems, newItem];
         toast.success("Item added to cart!");
@@ -271,7 +267,6 @@ const ProductProvider = ({ children }) => {
       setLocalData("cartItems", updatedCartItems);
       setCartItems(updatedCartItems);
     } else {
-      // Authenticated User logic
       try {
         const payload = {
           userid: Number(User?.userid),
@@ -307,10 +302,10 @@ const ProductProvider = ({ children }) => {
   const HandleUpdateCart = async (prod) => {
     try {
       if (!isAuthentified) {
+        // Guest: match by tempId (for variation rows) or by product id
         const storedCartItems = getLocalData("cartItems", []) || [];
 
         const updatedCartItems = storedCartItems.map((item) => {
-          // Use tempId for guest variations to ensure we update the right one
           const isMatch = item.tempId
             ? item.tempId === prod.tempId
             : parseInt(item.id) === parseInt(prod.productid || prod.id);
@@ -330,7 +325,9 @@ const ProductProvider = ({ children }) => {
         setCartItems(updatedCartItems);
         toast.success("Cart updated successfully!");
       } else {
-        // Authenticated User logic
+        // ✅ Send cartItemId — the ProductCart row's primary key
+        // prod.cartItemId comes from Edit.jsx: cartItemId: prod?.id
+        // where prod is the full ProductCart row, so prod.id IS the row id
         const res = await fetch(`${baseUrl}updatecart`, {
           method: "PATCH",
           headers: {
@@ -339,29 +336,27 @@ const ProductProvider = ({ children }) => {
           },
           body: JSON.stringify({
             userid: Number(User?.userid),
-            cartItemId: Number(prod?.cartItemId),  // ✅ add this
-            productid: Number(prod?.product?.id || prod?.productid || prod?.id),
-            color: prod?.color,
-            size: prod?.size,
+            cartItemId: Number(prod?.cartItemId), // ✅ ProductCart row id
             quantity: prod?.quantity,
+            size: prod?.size,
+            color: prod?.color,
           }),
         });
 
         const data = await res.json();
-        console.log("Full Server Response:", data); // Check this in the browser console
+        console.log("Server Response:", data);
 
         if (res.ok) {
           const items = data?.data?.ProductCart ?? [];
-          console.log("Extracted Items for State:", items); // Is the updated item in here?
-
           setLocalData("cartItems", items);
-          setCartItems([...items]); // Try using a spread to force a re-render
+          setCartItems([...items]);
           toast.success(data?.message);
         } else {
           toast.error(data?.message);
         }
-      } // <-- Correctly closed the else block here
+      }
     } catch (error) {
+      console.error("Update cart error:", error);
       toast.error("Unable to update cart. Please try again.");
     }
   };
@@ -372,7 +367,6 @@ const ProductProvider = ({ children }) => {
       if (!isAuthentified) {
         const storedCartItems = getLocalData("cartItems", []);
 
-        // Filter by tempId if available (for guests), otherwise by product id
         const updatedCartItems = storedCartItems?.filter((item) =>
           tempId ? item.tempId !== tempId : parseInt(item.id) !== parseInt(id)
         );
@@ -385,11 +379,11 @@ const ProductProvider = ({ children }) => {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             userid: Number(User?.userid),
-            productid: Number(id)
+            productid: Number(id),
           }),
         });
 
@@ -408,13 +402,14 @@ const ProductProvider = ({ children }) => {
       toast.error("Unable to delete cart, please try again later!");
     }
   };
-  // ... rest of your code ...
 
   // ─── Add to favourites ────────────────────────────────────────────────────
   const HandleAddFavouritrCart = (prod) => {
     if (!isAuthentified) {
       let storedFavouriteCart = getLocalData("favourieCart", []);
-      const existingItem = storedFavouriteCart?.find((item) => parseInt(item?.id) === parseInt(prod?.id));
+      const existingItem = storedFavouriteCart?.find(
+        (item) => parseInt(item?.id) === parseInt(prod?.id)
+      );
       let updatedFavouriteCart;
       if (existingItem) {
         toast.info("Item already in FavouriteCart");
@@ -442,7 +437,7 @@ const ProductProvider = ({ children }) => {
       {children}
     </ProductContext.Provider>
   );
-}; // Name matches the export now
+};
 
 export { ProductContext };
 export default ProductProvider;
