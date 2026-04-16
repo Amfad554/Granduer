@@ -306,8 +306,9 @@ const ProductProvider = ({ children }) => {
 
         const updatedCartItems = storedCartItems.map((item) => {
           const isMatch = item.tempId
-            ? item.tempId === prod.tempId
-            : parseInt(item.id) === parseInt(prod.productid || prod.id);
+            ? item.tempId === prod.tempId          // guest item with tempId → match by tempId
+            : Number(item.id) === Number(prod.cartItemId) ||   // ← use cartItemId, not productid
+            Number(item.id) === Number(prod.productid);
 
           if (isMatch) {
             return {

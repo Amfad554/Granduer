@@ -43,8 +43,9 @@ const Edit = ({
     console.log("Sending update — cartItemId:", prod?.id, "product:", product?.id);
 
     HandleUpdateCart({
-      cartItemId: prod?.id,       // ✅ ProductCart row primary key — used by backend to find the exact row
-      productid: product?.id,     // product reference (kept for guest fallback)
+      cartItemId: prod?.id,
+      tempId: prod?.tempId,        // ← ADD THIS so guest items can match by tempId
+      productid: product?.id,
       size: selectedSize,
       color: selectedColor,
       quantity: quantity,
