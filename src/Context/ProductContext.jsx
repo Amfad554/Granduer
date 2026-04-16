@@ -302,7 +302,6 @@ const ProductProvider = ({ children }) => {
   const HandleUpdateCart = async (prod) => {
     try {
       if (!isAuthentified) {
-        // Guest: match by tempId (for variation rows) or by product id
         const storedCartItems = getLocalData("cartItems", []) || [];
 
         const updatedCartItems = storedCartItems.map((item) => {
@@ -325,9 +324,15 @@ const ProductProvider = ({ children }) => {
         setCartItems(updatedCartItems);
         toast.success("Cart updated successfully!");
       } else {
-        // ✅ Send cartItemId — the ProductCart row's primary key
-        // prod.cartItemId comes from Edit.jsx: cartItemId: prod?.id
-        // where prod is the full ProductCart row, so prod.id IS the row id
+        // FIX: Log exactly what we're sending so we can verify
+        console.log("HandleUpdateCart payload:", {
+          userid: Number(User?.userid),
+          cartItemId: Number(prod?.cartItemId),
+          quantity: prod?.quantity,
+          size: prod?.size,
+          color: prod?.color,
+        });
+
         const res = await fetch(`${baseUrl}updatecart`, {
           method: "PATCH",
           headers: {
@@ -336,7 +341,7 @@ const ProductProvider = ({ children }) => {
           },
           body: JSON.stringify({
             userid: Number(User?.userid),
-            cartItemId: Number(prod?.cartItemId), // ✅ ProductCart row id
+            cartItemId: Number(prod?.cartItemId),
             quantity: prod?.quantity,
             size: prod?.size,
             color: prod?.color,
@@ -344,15 +349,43 @@ const ProductProvider = ({ children }) => {
         });
 
         const data = await res.json();
-        console.log("Server Response:", data);
+        console.log("Server response:", JSON.stringify(data, null, 2));
 
         if (res.ok) {
-          const items = data?.data?.ProductCart ?? [];
-          setLocalData("cartItems", items);
-          setCartItems([...items]);
-          toast.success(data?.message);
+          // FIX: Guard against empty/null ProductCart wiping the cart state.
+          // If the server returns a valid non-empty array, use it.
+          // Otherwise keep the current cartItems and patch just the updated row locally.
+          const items = data?.data?.ProductCart;
+
+          if (Array.isArray(items) && items.length > 0) {
+            setLocalData("cartItems", items);
+            setCartItems([...items]);
+          } else {
+            // Server returned empty or null ProductCart — patch locally instead
+            // so we never wipe the user's visible cart
+            console.warn(
+              "Server returned empty ProductCart after update — patching locally.",
+              data
+            );
+            setCartItems((prev) =>
+              prev.map((item) => {
+                const itemId = item.id ?? item.productid;
+                if (Number(itemId) === Number(prod.cartItemId)) {
+                  return {
+                    ...item,
+                    selectedsize: prod.size ?? item.selectedsize,
+                    selectedcolor: prod.color ?? item.selectedcolor,
+                    quantity: prod.quantity ?? item.quantity,
+                  };
+                }
+                return item;
+              })
+            );
+          }
+
+          toast.success(data?.message || "Cart updated successfully!");
         } else {
-          toast.error(data?.message);
+          toast.error(data?.message || "Failed to update cart.");
         }
       }
     } catch (error) {

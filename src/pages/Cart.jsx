@@ -20,19 +20,12 @@ const Cart = () => {
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [showLoginGate, setShowLoginGate] = useState(false); // ← login gate modal
+  const [showLoginGate, setShowLoginGate] = useState(false);
 
-  useEffect(() => {
-    if (selectedSize) setProd((prev) => ({ ...prev, size: selectedSize }));
-  }, [selectedSize]);
-
-  useEffect(() => {
-    if (selectedColor) setProd((prev) => ({ ...prev, color: selectedColor }));
-  }, [selectedColor]);
-
-  useEffect(() => {
-    if (quantity) setProd((prev) => ({ ...prev, quantity }));
-  }, [quantity]);
+  // FIX: Removed the three useEffects that were syncing selectedSize/selectedColor/quantity
+  // back into `prod`. Those effects ran immediately on mount and on every state change,
+  // which could overwrite prod with a plain object and lose nested Product data.
+  // Edit.jsx reads selectedSize/selectedColor/quantity directly as props — no sync needed.
 
   useEffect(() => {
     document.body.style.overflow = isModalOpen || showLoginGate ? "hidden" : "unset";
@@ -58,7 +51,7 @@ const Cart = () => {
   // ─── Checkout: gate behind login ──────────────────────────────────────────
   const handleCheckoutClick = () => {
     if (!isAuthentified) {
-      setShowLoginGate(true); // show login prompt instead of proceeding
+      setShowLoginGate(true);
       return;
     }
     HandleInitializePayment();
@@ -169,7 +162,6 @@ const Cart = () => {
                 <button
                   onClick={() => {
                     setShowLoginGate(false);
-                    // navigate to login page with signup tab open
                     navigate("/login", { state: { defaultTab: "register" } });
                   }}
                   className="w-full border-2 border-black text-black py-3 rounded-xl font-semibold hover:bg-gray-50 transition-all"
@@ -278,7 +270,8 @@ const Cart = () => {
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
-                                HandleDeleteCart(item?.productid || item?.id);
+                                // FIX: Pass tempId for desktop delete too (was missing before)
+                                HandleDeleteCart(item?.productid || item?.id, item?.tempId);
                               }}
                               title="Delete"
                               className="p-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:scale-110 transition-all duration-200 cursor-pointer"
@@ -340,7 +333,6 @@ const Cart = () => {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          // ✅ Pass both ID and tempId so the filter knows exactly which row to remove
                           HandleDeleteCart(item?.productid || item?.id, item?.tempId);
                         }}
                         className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200"
@@ -376,7 +368,6 @@ const Cart = () => {
                     </div>
                   </div>
 
-                  {/* ── Checkout button — shows lock hint for guests ── */}
                   <button
                     onClick={handleCheckoutClick}
                     disabled={isLoading || cartItems.length === 0}
@@ -389,7 +380,6 @@ const Cart = () => {
                     {isLoading ? "Processing..." : "Proceed to Checkout"}
                   </button>
 
-                  {/* ── Hint for guests ── */}
                   {!isAuthentified && (
                     <p className="text-center text-xs text-gray-400 mt-3">
                       🔒 You'll be asked to sign in before payment
