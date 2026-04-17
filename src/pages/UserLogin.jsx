@@ -151,7 +151,12 @@ const UserLoginPage = () => {
           handleLoginSuccess(res.decoded, res.token);
 
           if (guestCart.length > 0) {
+            isSyncingRef.current = true;
+
             await syncGuestCartToServer(guestCart, res.decoded, res.token);
+
+            // ✅ IMPORTANT FIX
+            localStorage.removeItem("cartItems");
 
             const resCart = await fetch(`${baseUrl}getcart/${res.decoded.userid}`, {
               method: "GET",
@@ -162,10 +167,7 @@ const UserLoginPage = () => {
 
             if (resCart.ok) {
               const items = cartData?.data?.ProductCart ?? [];
-
-              // ✅ FORCE update
               setCartItems(items);
-              localStorage.setItem("cartItems", JSON.stringify(items));
             }
           }
 
