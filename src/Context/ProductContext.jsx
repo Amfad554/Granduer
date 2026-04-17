@@ -193,8 +193,8 @@ const ProductProvider = ({ children }) => {
   // (cartReadyRef is set by login flow once sync is complete)
   useEffect(() => {
     const fetchUserCart = async () => {
-      // Skip if: sync in progress, cart already loaded by login flow, or not authed
-      if (isSyncingRef.current) return;
+      // In the fetchUserCart useEffect:
+      if (isSyncingRef.current || cartReadyRef.current) return;
       if (cartReadyRef.current) return;
       if (!isAuthentified || !token || !User?.userid) return;
 
