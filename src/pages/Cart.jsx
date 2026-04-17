@@ -33,12 +33,9 @@ const Cart = () => {
 useEffect(() => {
   const pendingCheckout = localStorage.getItem("pendingCheckout");
   if (isAuthentified && User?.email && pendingCheckout === "true") {
+    // Don't auto-trigger — UserLoginPage already navigates to /cart
+    // Just clear the flag; the user will click checkout themselves
     localStorage.removeItem("pendingCheckout");
-
-    // ✅ Small delay to let server cart load before charging
-    setTimeout(() => {
-      HandleInitializePayment();
-    }, 1500);
   }
 }, [isAuthentified, User?.email]);
 

@@ -6,28 +6,21 @@ import Layout from "../Shared/Layout/Layout";
 import { ProductContext } from "../Context/ProductContext";
 import { toast } from "react-toastify";
 import { loginUser, regUser } from "../services/userService";
-
 import { baseUrl } from "../App";
-
-
 
 const UserLoginPage = () => {
   const {
-    isAuthentified,
-    cartItems,
-    setCartItems,
-    handleLoginSuccess,
-    User,
+    isAuthentified, cartItems, setCartItems,
+    handleLoginSuccess, User, isSyncingRef,
   } = useContext(ProductContext);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ─── Read state passed from navigate() ────────────────────────────────────
-  const redirectMessage = location.state?.message;         // deleted account message
-  const defaultTab = location.state?.defaultTab;           // "register" from cart checkout
+  const redirectMessage = location.state?.message;
+  const defaultTab = location.state?.defaultTab;
 
-  const [isLogin, setIsLogin] = useState(defaultTab !== "register"); // open register tab if requested
+  const [isLogin, setIsLogin] = useState(defaultTab !== "register");
   const [isReset, setIsReset] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -42,21 +35,16 @@ const UserLoginPage = () => {
 
   const [logData, setLogData] = useState({ email: "", password: "" });
 
-  // ─── Redirect if already logged in — role-based ───────────────────────────
+  // ─── Redirect if already logged in ───────────────────────────────────────
   useEffect(() => {
     if (isAuthentified && User?.role) {
-      // Don't redirect if we're mid-checkout — handleSubmit will navigate
       if (localStorage.getItem("pendingCheckout") === "true") return;
-
-      if (User.role === "admin") {
-        navigate("/AdminDash");
-      } else {
-        navigate("/userDash");
-      }
+      if (User.role === "admin") navigate("/AdminDash");
+      else navigate("/userDash");
     }
   }, [isAuthentified, User, navigate]);
 
-
+  // ─── Guest cart sync ──────────────────────────────────────────────────────
   const syncGuestCartToServer = async (guestCart, userData, userToken) => {
     try {
       await Promise.all(
@@ -81,6 +69,7 @@ const UserLoginPage = () => {
       console.error("Guest cart sync failed:", err);
     }
   };
+
   // ─── Input handlers ───────────────────────────────────────────────────────
   const handleInputChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -110,12 +99,22 @@ const UserLoginPage = () => {
     setErrors({});
   };
 
+  // ─── Reset password ───────────────────────────────────────────────────────
+  // ✅ Standalone function — NOT inside handleSubmit
+  const handleResetPassword = (e) => {
+    e.preventDefault();
+    toast.success("Reset link sent!");
+    resetInputs();
+    setIsReset(false);
+  };
+
   // ─── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // ── Registration ──
       if (!isLogin && !isReset) {
         const formData = new FormData();
         formData.append("firstname", inputs.firstname);
@@ -137,54 +136,65 @@ const UserLoginPage = () => {
         }
       }
 
+      // ── Login ──
       if (isLogin && !isReset) {
         const res = await loginUser(logData, cartItems);
         if (res.ok) {
           toast.success(res?.data?.message);
 
-          // 1. Grab guest cart BEFORE clearing anything
           const guestCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
 
-          // 2. Log the user in
+          // ✅ Lock the context auto-fetch BEFORE triggering auth state change
+          if (guestCart.length > 0) {
+            isSyncingRef.current = true;
+          }
+
           handleLoginSuccess(res.decoded, res.token);
 
-          // 3. If there were guest items, sync them to server
           if (guestCart.length > 0) {
             await syncGuestCartToServer(guestCart, res.decoded, res.token);
+
+            const resCart = await fetch(`${baseUrl}getcart/${res.decoded.userid}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${res.token}` },
+            });
+            const cartData = await resCart.json();
+
+            if (resCart.ok) {
+              const items = cartData?.data?.ProductCart ?? [];
+              setCartItems(items);
+              localStorage.setItem("cartItems", JSON.stringify(items));
+            }
+
+            // ✅ Unlock only after sync is fully done
+            isSyncingRef.current = false;
           }
 
-          // 4. Clear local guest cart only after sync
-          setCartItems([]);
           localStorage.removeItem("cartItems");
 
-          // 5. Handle pending checkout
+          // ✅ Navigate after everything is settled
           const pendingCheckout = localStorage.getItem("pendingCheckout");
           if (pendingCheckout === "true") {
-            navigate("/cart");   // Cart.jsx useEffect will trigger payment
-          } else if (res.decoded?.role === "admin") {
-            navigate("/AdminDash");
+            localStorage.removeItem("pendingCheckout");
+            navigate("/cart");
           } else {
-            navigate("/userDash");
+            if (res.decoded.role === "admin") navigate("/AdminDash");
+            else navigate("/userDash");
           }
         } else {
-          toast.error(res?.data?.message || res.error);
+          toast.error(res.data?.message || res.error || "Login failed!");
         }
       }
-    } catch (error) {
-      toast.error("Something went wrong!");
-      console.error(error);
+    } catch (err) {
+      console.error("Submit error:", err);
+      toast.error("Something went wrong. Please try again.");
     } finally {
-      setLoading(false);
+      setLoading(false);  // ✅ always runs, even if an error is thrown
     }
   };
 
-  const handleResetPassword = (e) => {
-    e.preventDefault();
-    toast.success("Reset link sent!");
-    resetInputs();
-    setIsReset(false);
-  };
-
+  // ─── Render ───────────────────────────────────────────────────────────────
+  // ✅ This return belongs to the component, not to handleSubmit
   return (
     <Layout>
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
@@ -202,7 +212,6 @@ const UserLoginPage = () => {
 
         <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
 
-          {/* ── Redirect message banner (deleted account or checkout gate) ── */}
           {redirectMessage && (
             <div className="bg-red-50 border-l-4 border-red-500 text-red-700 text-sm px-4 py-3">
               ⚠️ {redirectMessage}
@@ -365,6 +374,7 @@ const UserLoginPage = () => {
       </div>
     </Layout>
   );
+  // ✅ This closing brace ends the component function
 };
 
 export default UserLoginPage;

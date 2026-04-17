@@ -57,6 +57,7 @@ const ProductProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
   const [User, setUser] = useState(() => getLocalData("user", {}));
   const [favoriteItem, setfavoriteItem] = useState(() => getLocalData("favourieCart", []));
+  const isSyncingRef = useRef(false);
 
   const [token, setToken] = useState(() => {
     const t = localStorage.getItem("token");
@@ -182,33 +183,31 @@ const ProductProvider = ({ children }) => {
   // ─── Fetch server cart on login ───────────────────────────────────────────
   // ─── Fetch server cart on login ───────────────────────────────────────────
   useEffect(() => {
-    const fetchUserCart = async () => {
-      if (isAuthentified && token && User?.userid) {
-        try {
-          const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const data = await res.json();
-          if (res.ok) {
-            const items = data?.data?.ProductCart ?? [];
+  const fetchUserCart = async () => {
+    // ✅ Skip if a guest-cart sync is in progress
+    if (isSyncingRef.current) return;
 
-            // ✅ Only update cart if server actually has items
-            // Don't overwrite a guest cart that's mid-sync
-            if (items.length > 0) {
-              setCartItems(items);
-              setLocalData("cartItems", items);
-            }
-            // If server returns empty, keep whatever is already in state
-            // (guest items may be syncing right now in UserLoginPage)
+    if (isAuthentified && token && User?.userid) {
+      try {
+        const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const items = data?.data?.ProductCart ?? [];
+          if (items.length > 0) {
+            setCartItems(items);
+            setLocalData("cartItems", items);
           }
-        } catch (error) {
-          console.error("Failed to fetch server cart:", error);
         }
+      } catch (error) {
+        console.error("Failed to fetch server cart:", error);
       }
-    };
-    fetchUserCart();
-  }, [isAuthentified, token, User?.userid]);
+    }
+  };
+  fetchUserCart();
+}, [isAuthentified, token, User?.userid]);
 
   // ─── Get all products ─────────────────────────────────────────────────────
   const HandleGetProducts = useCallback(async () => {
@@ -472,6 +471,7 @@ const ProductProvider = ({ children }) => {
         favouriteCout, isAuthentified, setIsAuthentified, loading,
         setLoading, setCartItems, setToken, token, User, setUser,
         showWarning, setShowWarning,
+          isSyncingRef,
       }}
     >
       {children}
