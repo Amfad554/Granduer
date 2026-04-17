@@ -157,17 +157,19 @@ const UserLoginPage = () => {
               method: "GET",
               headers: { Authorization: `Bearer ${res.token}` },
             });
+
             const cartData = await resCart.json();
 
             if (resCart.ok) {
               const items = cartData?.data?.ProductCart ?? [];
+
+              // ✅ FORCE update
               setCartItems(items);
               localStorage.setItem("cartItems", JSON.stringify(items));
             }
-            // ✅ Do NOT release lock here — release after navigation
           }
 
-          localStorage.removeItem("cartItems");
+
 
           // ✅ Navigate
           const pendingCheckout = localStorage.getItem("pendingCheckout");
@@ -182,7 +184,7 @@ const UserLoginPage = () => {
           // ✅ Release lock AFTER navigation in next tick
           setTimeout(() => {
             isSyncingRef.current = false;
-          }, 500);
+          }, 1500);
 
         } else {
           toast.error(res.data?.message || res.error || "Login failed!");

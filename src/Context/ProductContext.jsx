@@ -183,7 +183,10 @@ const ProductProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchUserCart = async () => {
-      if (isSyncingRef.current) return; // already handled
+      if (isSyncingRef.current) {
+        console.log("Skipping fetch — syncing in progress");
+        return;
+      }
 
       if (isAuthentified && token && User?.userid) {
         try {
@@ -313,8 +316,8 @@ const ProductProvider = ({ children }) => {
 
         const updatedCartItems = storedCartItems.map((item) => {
           const isMatch = item.tempId
-            ? item.tempId === prod.tempId          // guest item with tempId → match by tempId
-            : Number(item.id) === Number(prod.cartItemId) ||   // ← use cartItemId, not productid
+            ? item.tempId === prod.tempId
+            : Number(item.id) === Number(prod.cartItemId) ||
             Number(item.id) === Number(prod.productid);
 
           if (isMatch) {
@@ -332,7 +335,6 @@ const ProductProvider = ({ children }) => {
         setCartItems(updatedCartItems);
         toast.success("Cart updated successfully!");
       } else {
-        // FIX: Log exactly what we're sending so we can verify
         console.log("HandleUpdateCart payload:", {
           userid: Number(User?.userid),
           cartItemId: Number(prod?.cartItemId),
@@ -357,38 +359,33 @@ const ProductProvider = ({ children }) => {
         });
 
         const data = await res.json();
-        console.log("Server response:", JSON.stringify(data, null, 2));
+        console.log("Server response:", data);
 
         if (res.ok) {
-          // FIX: Guard against empty/null ProductCart wiping the cart state.
-          // If the server returns a valid non-empty array, use it.
-          // Otherwise keep the current cartItems and patch just the updated row locally.
           const items = data?.data?.ProductCart;
 
           if (Array.isArray(items) && items.length > 0) {
             setLocalData("cartItems", items);
-            setCartItems([...items]);
+            setCartItems(items);
           } else {
-            // Server returned empty or null ProductCart — patch locally instead
-            // so we never wipe the user's visible cart
-            console.warn(
-              "Server returned empty ProductCart after update — patching locally.",
-              data
-            );
-            setCartItems((prev) =>
-              prev.map((item) => {
-                const itemId = item.id ?? item.productid;
-                if (Number(itemId) === Number(prod.cartItemId)) {
-                  return {
-                    ...item,
-                    selectedsize: prod.size ?? item.selectedsize,
-                    selectedcolor: prod.color ?? item.selectedcolor,
-                    quantity: prod.quantity ?? item.quantity,
-                  };
-                }
-                return item;
-              })
-            );
+            console.warn("Server returned empty cart, patching locally");
+
+            setCartItems((prev) => {
+              const merged = Array.isArray(items) ? [...items] : [];
+
+              prev.forEach((localItem) => {
+                const exists = merged.find(
+                  (i) =>
+                    i.productid === (localItem.id ?? localItem.productid) &&
+                    i.size === localItem.size &&
+                    i.color === localItem.color
+                );
+
+                if (!exists) merged.push(localItem);
+              });
+
+              return merged;
+            });
           }
 
           toast.success(data?.message || "Cart updated successfully!");
@@ -408,7 +405,7 @@ const ProductProvider = ({ children }) => {
       if (!isAuthentified) {
         const storedCartItems = getLocalData("cartItems", []);
 
-        const updatedCartItems = storedCartItems?.filter((item) =>
+        const updatedCartItems = storedCartItems.filter((item) =>
           tempId ? item.tempId !== tempId : parseInt(item.id) !== parseInt(id)
         );
 
@@ -431,10 +428,10 @@ const ProductProvider = ({ children }) => {
         const data = await res.json();
 
         if (res.ok) {
-          toast.success(data?.message);
           const items = data?.data?.ProductCart ?? [];
           setLocalData("cartItems", items);
           setCartItems(items);
+          toast.success(data?.message);
         } else {
           toast.error(data?.message);
         }
@@ -449,10 +446,13 @@ const ProductProvider = ({ children }) => {
   const HandleAddFavouritrCart = (prod) => {
     if (!isAuthentified) {
       let storedFavouriteCart = getLocalData("favourieCart", []);
-      const existingItem = storedFavouriteCart?.find(
+
+      const existingItem = storedFavouriteCart.find(
         (item) => parseInt(item?.id) === parseInt(prod?.id)
       );
+
       let updatedFavouriteCart;
+
       if (existingItem) {
         toast.info("Item already in FavouriteCart");
         updatedFavouriteCart = storedFavouriteCart;
@@ -460,6 +460,7 @@ const ProductProvider = ({ children }) => {
         updatedFavouriteCart = [...storedFavouriteCart, { ...prod, quantity: 1 }];
         toast.success("Item Added to FavouriteCart Successfully!");
       }
+
       setLocalData("favourieCart", updatedFavouriteCart);
       setfavoriteItem(updatedFavouriteCart);
     }
