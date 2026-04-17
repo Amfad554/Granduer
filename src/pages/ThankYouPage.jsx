@@ -8,10 +8,12 @@ import { ProductContext } from "../Context/ProductContext";
 import { baseUrl } from "../App";
 import { PulseLoader } from "react-spinners";
 
+// ✅ Module-level flag — survives StrictMode double-invoke
+let paymentVerified = false;
+
 export default function ThankYouPage() {
   const [params] = useSearchParams();
   const transactionId = params.get("transaction_id");
-  const [isVisible, setIsVisible] = useState(false);
 
   const { token, setCartItems } = useContext(ProductContext);
 
@@ -23,12 +25,16 @@ export default function ThankYouPage() {
     height: window.innerHeight,
   });
 
-  const hasVerified = useRef(false);
-
   useEffect(() => {
     const verifyPayment = async () => {
-      // Prevent double-calling in StrictMode
-      if (hasVerified.current) return;
+      // ✅ Wait for token to be available from localStorage/context
+      if (!token) return;
+
+      // ✅ Prevent double-calling (StrictMode + re-renders)
+      if (paymentVerified) {
+        setIsLoading(false);
+        return;
+      }
 
       if (!transactionId) {
         toast.error("No transaction ID found");
@@ -36,17 +42,9 @@ export default function ThankYouPage() {
         return;
       }
 
-      if (!token) {
-        toast.error("Please login to verify payment");
-        setIsLoading(false);
-        return;
-      }
-
-      hasVerified.current = true;
+      paymentVerified = true;
 
       try {
-        // CHANGED: method to "GET" and added optional "/api" prefix check
-        // If your backend isn't using /api, remove it from the string below
         const res = await fetch(
           `${baseUrl}verifyPayment?transaction_id=${transactionId}`,
           {
@@ -58,12 +56,10 @@ export default function ThankYouPage() {
           }
         );
 
-        // If the response is HTML (starts with <), this line usually fails.
-        // We handle that by checking res.ok first.
         if (!res.ok) {
           const errorText = await res.text();
-          console.error("Server Error HTML:", errorText);
-          throw new Error("Server returned an error. Check backend routes.");
+          console.error("Server Error:", errorText);
+          throw new Error("Server returned an error.");
         }
 
         const data = await res.json();
@@ -72,16 +68,19 @@ export default function ThankYouPage() {
           setIsVerified(true);
           setReceiptData(data.data);
           toast.success("Payment verified successfully!");
-
-          // Clear cart on success
+          // ✅ Clear cart after successful payment
           setCartItems([]);
           localStorage.removeItem("cartItems");
+          // ✅ Reset cartReadyRef so cart re-fetches next time (optional)
+          localStorage.removeItem("cartSynced");
         } else {
           toast.error(data?.message || "Payment verification failed.");
+          paymentVerified = false; // ✅ Allow retry if server said false
         }
       } catch (err) {
         console.error("Verification error:", err);
         toast.error("Payment verification failed. Please contact support.");
+        paymentVerified = false; // ✅ Allow retry on network error
       } finally {
         setIsLoading(false);
       }
@@ -89,6 +88,14 @@ export default function ThankYouPage() {
 
     verifyPayment();
   }, [transactionId, token, setCartItems]);
+  // ✅ token in deps means it retries once token loads from context
+
+  // ✅ Reset module flag when component unmounts
+  useEffect(() => {
+    return () => {
+      paymentVerified = false;
+    };
+  }, []);
 
   // Window resize handler for Confetti
   useEffect(() => {
@@ -108,21 +115,31 @@ export default function ThankYouPage() {
     );
   }
 
-  if (!isVerified) {
-    return (
-      <div className="min-h-screen flex flex-col justify-center items-center text-center px-4">
-        <p className="text-xl font-bold mb-4 text-red-600">Payment verification failed.</p>
-        <p className="text-gray-600 mb-6">If your money was deducted, please contact our support team.</p>
-        <a href="/" className="px-6 py-3 rounded-xl bg-black text-white hover:bg-gray-800 transition">
-          Go Back Home
-        </a>
-      </div>
-    );
-  }
+if (!isVerified) {
+  return (
+    <div className="min-h-screen flex flex-col justify-center items-center text-center px-4">
+      <p className="text-xl font-bold mb-4 text-red-600">Payment verification failed.</p>
+      <p className="text-gray-600 mb-6">
+        If your money was deducted, please contact our support team.
+      </p>
+      <a
+        href="/"
+        className="px-6 py-3 rounded-xl bg-black text-white hover:bg-gray-800 transition"
+      >
+        Go Back Home
+      </a>
+    </div>
+  );
+}
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-white text-black px-4">
-      <Confetti width={windowSize.width} height={windowSize.height} numberOfPieces={80} recycle={false} />
+      <Confetti
+        width={windowSize.width}
+        height={windowSize.height}
+        numberOfPieces={80}
+        recycle={false}
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -136,7 +153,9 @@ export default function ThankYouPage() {
         </div>
 
         <h1 className="text-3xl font-extrabold mb-2">Order Confirmed!</h1>
-        <p className="text-gray-600 mb-6">Thank you for your purchase. Your receipt is ready below.</p>
+        <p className="text-gray-600 mb-6">
+          Thank you for your purchase. Your receipt is ready below.
+        </p>
 
         {receiptData && (
           <div className="bg-gray-50 p-5 rounded-2xl text-left mb-6 border border-gray-100">
