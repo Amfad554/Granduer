@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import { FaCheckCircle } from "react-icons/fa";
@@ -8,7 +8,7 @@ import { ProductContext } from "../Context/ProductContext";
 import { baseUrl } from "../App";
 import { PulseLoader } from "react-spinners";
 
-// ✅ Module-level flag — survives StrictMode double-invoke
+// Module-level flag — survives StrictMode double-invoke
 let paymentVerified = false;
 
 export default function ThankYouPage() {
@@ -25,12 +25,13 @@ export default function ThankYouPage() {
     height: window.innerHeight,
   });
 
+  // ── Verify payment ──────────────────────────────────────────────────────
   useEffect(() => {
     const verifyPayment = async () => {
-      // ✅ Wait for token to be available from localStorage/context
+      // Wait for token to load from context
       if (!token) return;
 
-      // ✅ Prevent double-calling (StrictMode + re-renders)
+      // Prevent double-calling (StrictMode + re-renders)
       if (paymentVerified) {
         setIsLoading(false);
         return;
@@ -44,7 +45,6 @@ export default function ThankYouPage() {
 
       paymentVerified = true;
 
-      // ✅ FIXED
       try {
         const res = await fetch(
           `${baseUrl}verifyPayment?transaction_id=${transactionId}`,
@@ -83,19 +83,19 @@ export default function ThankYouPage() {
       } finally {
         setIsLoading(false);
       }
+    };
 
-      verifyPayment();
-    }, [transactionId, token, setCartItems]);
-  // ✅ token in deps means it retries once token loads from context
+    verifyPayment(); // ← call is here, INSIDE useEffect, OUTSIDE verifyPayment
+  }, [transactionId, token, setCartItems]);
 
-  // ✅ Reset module flag when component unmounts
+  // ── Reset flag on unmount ───────────────────────────────────────────────
   useEffect(() => {
     return () => {
       paymentVerified = false;
     };
   }, []);
 
-  // Window resize handler for Confetti
+  // ── Window resize for Confetti ──────────────────────────────────────────
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight });
@@ -104,6 +104,7 @@ export default function ThankYouPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // ── Loading state ───────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="fixed inset-0 flex flex-col justify-center items-center z-50 bg-white">
@@ -113,6 +114,7 @@ export default function ThankYouPage() {
     );
   }
 
+  // ── Failed state ────────────────────────────────────────────────────────
   if (!isVerified) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center text-center px-4">
@@ -130,6 +132,7 @@ export default function ThankYouPage() {
     );
   }
 
+  // ── Success state ───────────────────────────────────────────────────────
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-white text-black px-4">
       <Confetti
