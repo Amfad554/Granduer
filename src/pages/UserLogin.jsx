@@ -46,10 +46,28 @@ const UserLoginPage = () => {
   }, [isAuthentified, User, navigate, loading]);
 
   // ─── Sync guest cart items to server ─────────────────────────────────────
+  // Inside UserLoginPage.js
   const syncGuestCartToServer = async (guestCart, userData, userToken) => {
     try {
+      // 1. Fetch current server cart first to see what's already there
+      const resCart = await fetch(`${baseUrl}getcart/${userData.userid}`, {
+        headers: { Authorization: `Bearer ${userToken}` },
+      });
+      const cartData = await resCart.json();
+      const serverItems = cartData?.data?.ProductCart ?? [];
+
+      // 2. Filter guestCart: Only keep items NOT already on the server
+      const itemsToSync = guestCart.filter(guestItem => {
+        return !serverItems.some(serverItem =>
+          serverItem.productid === (guestItem.id ?? guestItem.productid) &&
+          serverItem.size === (guestItem.size ?? guestItem.selectedsize) &&
+          serverItem.color === (guestItem.color ?? guestItem.selectedcolor)
+        );
+      });
+
+      // 3. Only sync the unique items
       await Promise.all(
-        guestCart.map((item) =>
+        itemsToSync.map((item) =>
           fetch(`${baseUrl}addcart`, {
             method: "POST",
             headers: {

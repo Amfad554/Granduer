@@ -188,14 +188,12 @@ const ProductProvider = ({ children }) => {
     }
   }, [favoriteItem]);
 
-  // ─── Fetch server cart on auth ─────────────────────────────────────────────
-  // Only runs when user is authenticated and cartReadyRef is NOT already set
-  // (cartReadyRef is set by login flow once sync is complete)
   useEffect(() => {
     const fetchUserCart = async () => {
-      // In the fetchUserCart useEffect:
+      // 🛑 BLOCK the fetch if we are currently syncing guest items 
+      // or if the cart is already marked as ready
       if (isSyncingRef.current || cartReadyRef.current) return;
-      if (cartReadyRef.current) return;
+
       if (!isAuthentified || !token || !User?.userid) return;
 
       try {
@@ -207,7 +205,7 @@ const ProductProvider = ({ children }) => {
         if (res.ok) {
           const items = data?.data?.ProductCart ?? [];
           setCartItems(items);
-          if (items.length > 0) setLocalData("cartItems", items);
+          setLocalData("cartItems", items);
           cartReadyRef.current = true;
         }
       } catch (error) {
@@ -325,6 +323,7 @@ const ProductProvider = ({ children }) => {
   const HandleUpdateCart = async (prod) => {
     try {
       if (!isAuthentified) {
+        // ─── GUEST UPDATE ───
         const storedCartItems = getLocalData("cartItems", []) || [];
 
         const updatedCartItems = storedCartItems.map((item) => {
@@ -348,6 +347,7 @@ const ProductProvider = ({ children }) => {
         setCartItems(updatedCartItems);
         toast.success("Cart updated successfully!");
       } else {
+        // ─── AUTHENTICATED UPDATE ───
         const res = await fetch(`${baseUrl}updatecart`, {
           method: "PATCH",
           headers: {
@@ -366,27 +366,12 @@ const ProductProvider = ({ children }) => {
         const data = await res.json();
 
         if (res.ok) {
-          const items = data?.data?.ProductCart;
+          // IMPORTANT: The server returns the updated cart. 
+          // We use that directly instead of trying to merge it manually.
+          const serverItems = data?.data?.ProductCart ?? [];
 
-          if (Array.isArray(items) && items.length > 0) {
-            setLocalData("cartItems", items);
-            setCartItems(items);
-          } else {
-            setCartItems((prev) => {
-              const merged = Array.isArray(items) ? [...items] : [];
-              prev.forEach((localItem) => {
-                const exists = merged.find(
-                  (i) =>
-                    i.productid === (localItem.id ?? localItem.productid) &&
-                    i.size === localItem.size &&
-                    i.color === localItem.color
-                );
-                if (!exists) merged.push(localItem);
-              });
-              return merged;
-            });
-          }
-
+          setLocalData("cartItems", serverItems);
+          setCartItems(serverItems);
           toast.success(data?.message || "Cart updated successfully!");
         } else {
           toast.error(data?.message || "Failed to update cart.");
