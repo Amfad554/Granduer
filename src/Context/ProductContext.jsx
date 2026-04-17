@@ -57,7 +57,11 @@ const ProductProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
   const [User, setUser] = useState(() => getLocalData("user", {}));
   const [favoriteItem, setfavoriteItem] = useState(() => getLocalData("favourieCart", []));
+
+  // isSyncingRef: blocks the auto-fetch from overwriting cart during login sync
   const isSyncingRef = useRef(false);
+  // cartReadyRef: set to true once cart is authoritative (after login sync or normal load)
+  const cartReadyRef = useRef(false);
 
   const [token, setToken] = useState(() => {
     const t = localStorage.getItem("token");
@@ -75,6 +79,8 @@ const ProductProvider = ({ children }) => {
     setToken("");
     setCartItems([]);
     setShowWarning(false);
+    cartReadyRef.current = false;
+    isSyncingRef.current = false;
 
     localStorage.removeItem("isAuthentified");
     localStorage.removeItem("token");
@@ -82,6 +88,8 @@ const ProductProvider = ({ children }) => {
     localStorage.removeItem("cartItems");
     localStorage.removeItem("loginTime");
     localStorage.removeItem("lastActive");
+    // ✅ Always clear cartSynced on logout so next login syncs fresh
+    localStorage.removeItem("cartSynced");
 
     clearTimeout(activityTimerRef.current);
     clearTimeout(sessionTimerRef.current);
@@ -180,36 +188,33 @@ const ProductProvider = ({ children }) => {
     }
   }, [favoriteItem]);
 
-
+  // ─── Fetch server cart on auth ─────────────────────────────────────────────
+  // Only runs when user is authenticated and cartReadyRef is NOT already set
+  // (cartReadyRef is set by login flow once sync is complete)
   useEffect(() => {
     const fetchUserCart = async () => {
-      if (isSyncingRef.current) {
-        console.log("Skipping fetch — syncing in progress");
-        return;
-      }
+      // Skip if: sync in progress, cart already loaded by login flow, or not authed
+      if (isSyncingRef.current) return;
+      if (cartReadyRef.current) return;
+      if (!isAuthentified || !token || !User?.userid) return;
 
-      if (isAuthentified && token && User?.userid) {
-        try {
-          const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const data = await res.json();
-          if (res.ok) {
-            const items = data?.data?.ProductCart ?? [];
-            // ✅ Only overwrite if server has items AND local cart is empty
-            // This prevents wiping a just-synced cart
-            setCartItems(prev => {
-              if (prev.length > 0) return prev; // keep what we have
-              return items;
-            });
-            if (items.length > 0) setLocalData("cartItems", items);
-          }
-        } catch (error) {
-          console.error("Failed to fetch server cart:", error);
+      try {
+        const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const items = data?.data?.ProductCart ?? [];
+          setCartItems(items);
+          if (items.length > 0) setLocalData("cartItems", items);
+          cartReadyRef.current = true;
         }
+      } catch (error) {
+        console.error("Failed to fetch server cart:", error);
       }
     };
+
     fetchUserCart();
   }, [isAuthentified, token, User?.userid]);
 
@@ -239,6 +244,14 @@ const ProductProvider = ({ children }) => {
     localStorage.setItem("isAuthentified", "true");
     localStorage.setItem("loginTime", Date.now().toString());
     localStorage.setItem("lastActive", Date.now().toString());
+  };
+
+  // ─── Mark cart as ready (called by login flow after sync) ─────────────────
+  const markCartReady = (items) => {
+    setCartItems(items);
+    setLocalData("cartItems", items);
+    cartReadyRef.current = true;
+    isSyncingRef.current = false;
   };
 
   // ─── Add to cart ──────────────────────────────────────────────────────────
@@ -335,14 +348,6 @@ const ProductProvider = ({ children }) => {
         setCartItems(updatedCartItems);
         toast.success("Cart updated successfully!");
       } else {
-        console.log("HandleUpdateCart payload:", {
-          userid: Number(User?.userid),
-          cartItemId: Number(prod?.cartItemId),
-          quantity: prod?.quantity,
-          size: prod?.size,
-          color: prod?.color,
-        });
-
         const res = await fetch(`${baseUrl}updatecart`, {
           method: "PATCH",
           headers: {
@@ -359,7 +364,6 @@ const ProductProvider = ({ children }) => {
         });
 
         const data = await res.json();
-        console.log("Server response:", data);
 
         if (res.ok) {
           const items = data?.data?.ProductCart;
@@ -368,11 +372,8 @@ const ProductProvider = ({ children }) => {
             setLocalData("cartItems", items);
             setCartItems(items);
           } else {
-            console.warn("Server returned empty cart, patching locally");
-
             setCartItems((prev) => {
               const merged = Array.isArray(items) ? [...items] : [];
-
               prev.forEach((localItem) => {
                 const exists = merged.find(
                   (i) =>
@@ -380,10 +381,8 @@ const ProductProvider = ({ children }) => {
                     i.size === localItem.size &&
                     i.color === localItem.color
                 );
-
                 if (!exists) merged.push(localItem);
               });
-
               return merged;
             });
           }
@@ -475,7 +474,7 @@ const ProductProvider = ({ children }) => {
         favouriteCout, isAuthentified, setIsAuthentified, loading,
         setLoading, setCartItems, setToken, token, User, setUser,
         showWarning, setShowWarning,
-        isSyncingRef,
+        isSyncingRef, markCartReady,
       }}
     >
       {children}

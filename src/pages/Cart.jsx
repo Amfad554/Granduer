@@ -21,23 +21,11 @@ const Cart = () => {
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [showLoginGate, setShowLoginGate] = useState(false);
 
   useEffect(() => {
-    document.body.style.overflow = isModalOpen || showLoginGate ? "hidden" : "unset";
+    document.body.style.overflow = isModalOpen ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
-  }, [isModalOpen, showLoginGate]);
-
-  // ── Auto-trigger payment if user just logged in from checkout gate ──
-// ── Auto-trigger payment if user just logged in from checkout gate ──
-useEffect(() => {
-  const pendingCheckout = localStorage.getItem("pendingCheckout");
-  if (isAuthentified && User?.email && pendingCheckout === "true") {
-    // Don't auto-trigger — UserLoginPage already navigates to /cart
-    // Just clear the flag; the user will click checkout themselves
-    localStorage.removeItem("pendingCheckout");
-  }
-}, [isAuthentified, User?.email]);
+  }, [isModalOpen]);
 
   const getPrice = (item) => Number(item?.price ?? item?.Product?.price ?? 0);
   const getQty = (item) => Number(item?.quantity ?? 0);
@@ -55,11 +43,11 @@ useEffect(() => {
     setIsModalOpen(true);
   };
 
-  // ── Checkout: save flag + navigate directly to login ──────────────────────
+  // ── Checkout: redirect to login if not authed ─────────────────────────────
   const handleCheckoutClick = () => {
     if (!isAuthentified) {
-      localStorage.setItem("pendingCheckout", "true");
-      setShowLoginGate(false);
+      // Cart items are already in localStorage for guest users
+      // Login page will sync them and come back to /cart
       navigate("/login");
       return;
     }
@@ -130,56 +118,6 @@ useEffect(() => {
           <div className="fixed inset-0 z-50 flex justify-center items-center bg-white bg-opacity-75">
             <div className="flex flex-col items-center">
               <p className="text-black mt-2 font-semibold">Processing...</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Login Gate Modal ── */}
-        {showLoginGate && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowLoginGate(false)}
-          >
-            <div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 flex flex-col gap-5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Sign in to checkout</h2>
-                <button
-                  onClick={() => setShowLoginGate(false)}
-                  className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-all"
-                >
-                  <ImCancelCircle className="h-5 w-5" />
-                </button>
-              </div>
-
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Your cart items are saved. Please sign in or create an account to complete your purchase.
-              </p>
-
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={handleCheckoutClick}
-                  className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => {
-                    localStorage.setItem("pendingCheckout", "true");
-                    setShowLoginGate(false);
-                    navigate("/login", { state: { defaultTab: "register" } });
-                  }}
-                  className="w-full border-2 border-black text-black py-3 rounded-xl font-semibold hover:bg-gray-50 transition-all"
-                >
-                  Create Account
-                </button>
-              </div>
-
-              <p className="text-center text-xs text-gray-400">
-                Your cart will be waiting for you after login.
-              </p>
             </div>
           </div>
         )}
@@ -400,7 +338,6 @@ useEffect(() => {
               <p className="text-gray-600 mb-8 text-center">
                 Looks like you haven't added any items yet
               </p>
-
               <Link
                 to="/"
                 className="bg-black text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -411,7 +348,7 @@ useEffect(() => {
           )}
         </div>
       </div>
-    </Layout >
+    </Layout>
   );
 };
 

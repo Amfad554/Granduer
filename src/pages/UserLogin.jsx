@@ -11,7 +11,7 @@ import { baseUrl } from "../App";
 const UserLoginPage = () => {
   const {
     isAuthentified, cartItems, setCartItems,
-    handleLoginSuccess, User, isSyncingRef,
+    handleLoginSuccess, markCartReady, User, isSyncingRef,
   } = useContext(ProductContext);
 
   const navigate = useNavigate();
@@ -38,13 +38,14 @@ const UserLoginPage = () => {
   // ─── Redirect if already logged in ───────────────────────────────────────
   useEffect(() => {
     if (isAuthentified && User?.role) {
-      if (localStorage.getItem("pendingCheckout") === "true") return;
+      // Don't redirect away if we're in the middle of a login flow
+      if (loading) return;
       if (User.role === "admin") navigate("/AdminDash");
-      else navigate("/userDash");
+      else navigate("/cart");
     }
-  }, [isAuthentified, User, navigate]);
+  }, [isAuthentified, User, navigate, loading]);
 
-  // ─── Guest cart sync ──────────────────────────────────────────────────────
+  // ─── Sync guest cart items to server ─────────────────────────────────────
   const syncGuestCartToServer = async (guestCart, userData, userToken) => {
     try {
       await Promise.all(
@@ -127,12 +128,13 @@ const UserLoginPage = () => {
 
         const res = await regUser(formData);
         if (res.ok) {
-          toast.success(res.data?.message || "Registration successful!");
+          toast.success(res.data?.message || "Registration successful! Please log in.");
           resetInputs();
           setIsLogin(true);
         } else {
           toast.error(res.data?.message || res.error || "Registration failed!");
         }
+        return; // exit early — don't fall through to login block
       }
 
       // ── Login ──
@@ -140,57 +142,50 @@ const UserLoginPage = () => {
         const res = await loginUser(logData, cartItems);
 
         if (res.ok) {
-          toast.success(res?.data?.message);
+          toast.success(res?.data?.message || "Logged in successfully!");
 
+          // ✅ STEP 1: Capture guest cart BEFORE any state changes
+          // (localStorage "cartItems" still has guest cart at this point)
           const guestCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
-          const hasSynced = localStorage.getItem("cartSynced");
+          const hasGuestItems = guestCart.length > 0;
 
-          // ✅ Lock before auth change (prevents auto fetch clash)
-          if (guestCart.length > 0 && !hasSynced) {
+          // ✅ STEP 2: Lock auto-fetch so it doesn't race with our sync
+          if (hasGuestItems) {
             isSyncingRef.current = true;
           }
 
-          // ✅ LOGIN (ONLY ONCE)
+          // ✅ STEP 3: Set auth state (triggers useEffect in context, but isSyncingRef blocks fetch)
           handleLoginSuccess(res.decoded, res.token);
 
-          // ✅ SYNC ONLY ONCE
-          if (guestCart.length > 0 && !hasSynced) {
+          // ✅ STEP 4: Sync guest cart to server if there were items
+          if (hasGuestItems) {
             await syncGuestCartToServer(guestCart, res.decoded, res.token);
 
-            // ✅ mark as synced
-            localStorage.setItem("cartSynced", "true");
-
-            // ✅ remove guest cart
+            // ✅ STEP 5: Clear guest cart from localStorage
             localStorage.removeItem("cartItems");
-
-            // ✅ fetch fresh server cart
-            const resCart = await fetch(`${baseUrl}getcart/${res.decoded.userid}`, {
-              method: "GET",
-              headers: { Authorization: `Bearer ${res.token}` },
-            });
-
-            const cartData = await resCart.json();
-
-            if (resCart.ok) {
-              const items = cartData?.data?.ProductCart ?? [];
-              setCartItems(items);
-            }
+            localStorage.setItem("cartSynced", "true");
           }
 
-          // ✅ Navigate
-          const pendingCheckout = localStorage.getItem("pendingCheckout");
-          if (pendingCheckout === "true") {
+          // ✅ STEP 6: Always fetch the fresh server cart (includes synced guest items)
+          const resCart = await fetch(`${baseUrl}getcart/${res.decoded.userid}`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${res.token}` },
+          });
+
+          const cartData = await resCart.json();
+          const finalItems = resCart.ok ? (cartData?.data?.ProductCart ?? []) : [];
+
+          // ✅ STEP 7: Commit final cart and release lock via markCartReady
+          markCartReady(finalItems);
+
+          // ✅ STEP 8: Navigate — always go to /cart so user can review & checkout
+          if (res.decoded.role === "admin") {
+            navigate("/AdminDash");
+          } else {
+            // Clear any pending checkout flags — we're going to cart directly
             localStorage.removeItem("pendingCheckout");
             navigate("/cart");
-          } else {
-            if (res.decoded.role === "admin") navigate("/AdminDash");
-            else navigate("/userDash");
           }
-
-          // ✅ release lock
-          setTimeout(() => {
-            isSyncingRef.current = false;
-          }, 1500);
 
         } else {
           toast.error(res.data?.message || res.error || "Login failed!");
@@ -200,6 +195,7 @@ const UserLoginPage = () => {
     } catch (err) {
       console.error("Submit error:", err);
       toast.error("Something went wrong. Please try again.");
+      isSyncingRef.current = false;
     } finally {
       setLoading(false);
     }
@@ -385,7 +381,6 @@ const UserLoginPage = () => {
       </div>
     </Layout>
   );
-  // ✅ return is here — outside handleSubmit, inside the component
 };
 
 export default UserLoginPage;
