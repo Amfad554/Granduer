@@ -100,7 +100,6 @@ const UserLoginPage = () => {
   };
 
   // ─── Reset password ───────────────────────────────────────────────────────
-  // ✅ Standalone function — NOT inside handleSubmit
   const handleResetPassword = (e) => {
     e.preventDefault();
     toast.success("Reset link sent!");
@@ -144,7 +143,7 @@ const UserLoginPage = () => {
 
           const guestCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
 
-          // ✅ Lock the context auto-fetch BEFORE triggering auth state change
+          // ✅ Lock context auto-fetch BEFORE triggering auth state change
           if (guestCart.length > 0) {
             isSyncingRef.current = true;
           }
@@ -165,14 +164,12 @@ const UserLoginPage = () => {
               setCartItems(items);
               localStorage.setItem("cartItems", JSON.stringify(items));
             }
-
-            // ✅ Unlock only after sync is fully done
-            isSyncingRef.current = false;
+            // ✅ Do NOT release lock here — release after navigation
           }
 
           localStorage.removeItem("cartItems");
 
-          // ✅ Navigate after everything is settled
+          // ✅ Navigate
           const pendingCheckout = localStorage.getItem("pendingCheckout");
           if (pendingCheckout === "true") {
             localStorage.removeItem("pendingCheckout");
@@ -181,6 +178,12 @@ const UserLoginPage = () => {
             if (res.decoded.role === "admin") navigate("/AdminDash");
             else navigate("/userDash");
           }
+
+          // ✅ Release lock AFTER navigation in next tick
+          setTimeout(() => {
+            isSyncingRef.current = false;
+          }, 500);
+
         } else {
           toast.error(res.data?.message || res.error || "Login failed!");
         }
@@ -189,12 +192,11 @@ const UserLoginPage = () => {
       console.error("Submit error:", err);
       toast.error("Something went wrong. Please try again.");
     } finally {
-      setLoading(false);  // ✅ always runs, even if an error is thrown
+      setLoading(false);
     }
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
-  // ✅ This return belongs to the component, not to handleSubmit
   return (
     <Layout>
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
@@ -374,7 +376,7 @@ const UserLoginPage = () => {
       </div>
     </Layout>
   );
-  // ✅ This closing brace ends the component function
+  // ✅ return is here — outside handleSubmit, inside the component
 };
 
 export default UserLoginPage;

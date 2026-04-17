@@ -180,34 +180,35 @@ const ProductProvider = ({ children }) => {
     }
   }, [favoriteItem]);
 
-  // ─── Fetch server cart on login ───────────────────────────────────────────
-  // ─── Fetch server cart on login ───────────────────────────────────────────
-  useEffect(() => {
-  const fetchUserCart = async () => {
-    // ✅ Skip if a guest-cart sync is in progress
-    if (isSyncingRef.current) return;
 
-    if (isAuthentified && token && User?.userid) {
-      try {
-        const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.ok) {
-          const items = data?.data?.ProductCart ?? [];
-          if (items.length > 0) {
-            setCartItems(items);
-            setLocalData("cartItems", items);
+  useEffect(() => {
+    const fetchUserCart = async () => {
+      if (isSyncingRef.current) return; // already handled
+
+      if (isAuthentified && token && User?.userid) {
+        try {
+          const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+          if (res.ok) {
+            const items = data?.data?.ProductCart ?? [];
+            // ✅ Only overwrite if server has items AND local cart is empty
+            // This prevents wiping a just-synced cart
+            setCartItems(prev => {
+              if (prev.length > 0) return prev; // keep what we have
+              return items;
+            });
+            if (items.length > 0) setLocalData("cartItems", items);
           }
+        } catch (error) {
+          console.error("Failed to fetch server cart:", error);
         }
-      } catch (error) {
-        console.error("Failed to fetch server cart:", error);
       }
-    }
-  };
-  fetchUserCart();
-}, [isAuthentified, token, User?.userid]);
+    };
+    fetchUserCart();
+  }, [isAuthentified, token, User?.userid]);
 
   // ─── Get all products ─────────────────────────────────────────────────────
   const HandleGetProducts = useCallback(async () => {
@@ -298,6 +299,7 @@ const ProductProvider = ({ children }) => {
           toast.error(data?.message);
         }
       } catch (error) {
+        console.error("Add to cart error:", error);
         toast.error("Unable to add to cart. Please try again.");
       }
     }
@@ -438,6 +440,7 @@ const ProductProvider = ({ children }) => {
         }
       }
     } catch (error) {
+      console.error("Delete cart error:", error);
       toast.error("Unable to delete cart, please try again later!");
     }
   };
@@ -471,7 +474,7 @@ const ProductProvider = ({ children }) => {
         favouriteCout, isAuthentified, setIsAuthentified, loading,
         setLoading, setCartItems, setToken, token, User, setUser,
         showWarning, setShowWarning,
-          isSyncingRef,
+        isSyncingRef,
       }}
     >
       {children}
