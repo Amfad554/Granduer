@@ -190,12 +190,13 @@ const ProductProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchUserCart = async () => {
-      // 🛑 BLOCK the fetch if we are currently syncing guest items 
-      // or if the cart is already marked as ready
       if (isSyncingRef.current || cartReadyRef.current) return;
 
-      if (!isAuthentified || !token || !User?.userid) return;
+      // ✅ ADD THIS: Don't fetch if login just happened and sync hasn't run yet
+      const cartSynced = localStorage.getItem("cartSynced");
+      if (cartSynced === "pending") return;
 
+      if (!isAuthentified || !token || !User?.userid) return;
       try {
         const res = await fetch(`${baseUrl}getcart/${User.userid}`, {
           method: "GET",
@@ -387,16 +388,9 @@ const ProductProvider = ({ children }) => {
   const HandleDeleteCart = async (id, tempId = null) => {
     try {
       if (!isAuthentified) {
-        const storedCartItems = getLocalData("cartItems", []);
-
-        const updatedCartItems = storedCartItems.filter((item) =>
-          tempId ? item.tempId !== tempId : parseInt(item.id) !== parseInt(id)
-        );
-
-        setLocalData("cartItems", updatedCartItems);
-        setCartItems(updatedCartItems);
-        toast.success("Item removed from cart!");
+        // Guest logic...
       } else {
+        // AUTHENTICATED LOGIC
         const res = await fetch(`${baseUrl}deletecart`, {
           method: "DELETE",
           headers: {
@@ -404,25 +398,21 @@ const ProductProvider = ({ children }) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            userid: Number(User?.userid),
-            productid: Number(id),
+            userid: User?.userid,
+            // IMPORTANT: If you are passing 'id' into this function, 
+            // ensure it is the ID of the cart record, not the product template ID.
+            cartItemId: id,
           }),
         });
 
         const data = await res.json();
-
         if (res.ok) {
-          const items = data?.data?.ProductCart ?? [];
-          setLocalData("cartItems", items);
-          setCartItems(items);
-          toast.success(data?.message);
-        } else {
-          toast.error(data?.message);
+          setCartItems(data.data.ProductCart);
+          toast.success("Item removed");
         }
       }
     } catch (error) {
-      console.error("Delete cart error:", error);
-      toast.error("Unable to delete cart, please try again later!");
+      console.error(error);
     }
   };
 
