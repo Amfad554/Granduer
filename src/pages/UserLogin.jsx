@@ -138,26 +138,32 @@ const UserLoginPage = () => {
       // ── Login ──
       if (isLogin && !isReset) {
         const res = await loginUser(logData, cartItems);
+
         if (res.ok) {
           toast.success(res?.data?.message);
 
           const guestCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
+          const hasSynced = localStorage.getItem("cartSynced");
 
-          // ✅ Lock context auto-fetch BEFORE triggering auth state change
-          if (guestCart.length > 0) {
+          // ✅ Lock before auth change (prevents auto fetch clash)
+          if (guestCart.length > 0 && !hasSynced) {
             isSyncingRef.current = true;
           }
 
+          // ✅ LOGIN (ONLY ONCE)
           handleLoginSuccess(res.decoded, res.token);
 
-          if (guestCart.length > 0) {
-            isSyncingRef.current = true;
-
+          // ✅ SYNC ONLY ONCE
+          if (guestCart.length > 0 && !hasSynced) {
             await syncGuestCartToServer(guestCart, res.decoded, res.token);
 
-            // ✅ IMPORTANT FIX
+            // ✅ mark as synced
+            localStorage.setItem("cartSynced", "true");
+
+            // ✅ remove guest cart
             localStorage.removeItem("cartItems");
 
+            // ✅ fetch fresh server cart
             const resCart = await fetch(`${baseUrl}getcart/${res.decoded.userid}`, {
               method: "GET",
               headers: { Authorization: `Bearer ${res.token}` },
@@ -171,8 +177,6 @@ const UserLoginPage = () => {
             }
           }
 
-
-
           // ✅ Navigate
           const pendingCheckout = localStorage.getItem("pendingCheckout");
           if (pendingCheckout === "true") {
@@ -183,7 +187,7 @@ const UserLoginPage = () => {
             else navigate("/userDash");
           }
 
-          // ✅ Release lock AFTER navigation in next tick
+          // ✅ release lock
           setTimeout(() => {
             isSyncingRef.current = false;
           }, 1500);
@@ -192,6 +196,7 @@ const UserLoginPage = () => {
           toast.error(res.data?.message || res.error || "Login failed!");
         }
       }
+
     } catch (err) {
       console.error("Submit error:", err);
       toast.error("Something went wrong. Please try again.");
